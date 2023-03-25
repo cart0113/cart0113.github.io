@@ -23,8 +23,8 @@ const countdown = new CanvasCircularCountdown(countdownEl, {
       if (percentage == 0) {
         //https://stackoverflow.com/questions/21815323/have-sound-play-when-alert-is-triggered
         //document.getElementById('xyz').play(); 
-        soundEffect.src = "alarm.mp3";
-        soundEffect.play();
+        //soundEffect.src = "alarm.mp3";
+        //soundEffect.play();
       }
    }
 ).start();
@@ -40,3 +40,23 @@ window.addEventListener('resize', () => {
   }, 250);
   }
 );
+
+  $(function() {
+    $('#datetimepicker3').datetimepicker({
+      pickDate: false
+    });
+  });
+
+/*
+$('.timepicker').timepicker({
+    timeFormat: 'h:mm:ss',
+    interval: 0.25,
+    minTime: 0,
+    maxTime: 3600,
+    defaultTime: 5,
+    startTime: 0,
+    dynamic: true,
+    dropdown: true,
+    scrollbar: true
+});
+*/
