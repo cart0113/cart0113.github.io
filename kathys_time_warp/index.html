@@ -13,21 +13,44 @@
     <link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.2/css/bootstrap-combined.min.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" media="screen"
          href="http://tarruda.github.io/bootstrap-datetimepicker/assets/css/bootstrap-datetimepicker.min.css">
+    <link href="https://fonts.cdnfonts.com/css/do-futuristic" rel="stylesheet">
   </head>
   <!--
       <audio id="xyz" src="alarm.mp3" preload="auto"></audio>
   -->
   <body>
     <main>
-    Kathy's Time Warp
-    <div class="well">
-      <div id="datetimepicker3" class="input-append">
-        <input data-format="hh:mm:ss" type="text"></input>
-        <span class="add-on">
-          <i data-time-icon="icon-time" data-date-icon="icon-calendar">
-          </i>
-        </span>
-      </div>
+    
+    <div id="picker-container" "class="well">
+        <div id="title">KATHY'S TIME WARP</div>
+        <table>
+            <tr>
+                <td>
+                    <div class="std-text">REAL TIME</div>
+                </td>
+                <td>
+                    <div id="datetimepicker0" class="input-append">
+                          <input data-format="hh:mm:ss" type="text"></input>
+                          <span class="add-on">
+                                <i data-time-icon="icon-time" data-date-icon="icon-calendar"></i>
+                          </span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <div class="std-text">DISPLAY TIME</div>
+                </td>
+                <td>
+                    <div id="datetimepicker1" class="input-append">
+                          <input data-format="hh:mm:ss" type="text"></input>
+                          <span class="add-on">
+                                <i data-time-icon="icon-time" data-date-icon="icon-calendar"></i>
+                          </span>
+                    </div>
+                </td>
+            </tr>
+        </table>
     </div>    
     <div id="countdown-container">
         <canvas id="countdown-canvas"></canvas>

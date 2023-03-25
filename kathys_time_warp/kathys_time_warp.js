@@ -41,11 +41,17 @@ window.addEventListener('resize', () => {
   }
 );
 
-  $(function() {
-    $('#datetimepicker3').datetimepicker({
-      pickDate: false
-    });
-  });
+$('#datetimepicker0').datetimepicker({
+  pickDate: false
+});
+$('#datetimepicker1').datetimepicker({
+  pickDate: false
+});
+var picker0 = $('#datetimepicker0').data('datetimepicker');
+var picker1 = $('#datetimepicker1').data('datetimepicker');
+
+picker0.setDate(new Date(Date.UTC(1998, 10, 11, 0,  5)));
+picker1.setDate(new Date(Date.UTC(1998, 10, 11, 0, 10)));
 
 /*
 $('.timepicker').timepicker({
