@@ -14,46 +14,54 @@
     <link rel="stylesheet" type="text/css" media="screen"
          href="https://tarruda.github.io/bootstrap-datetimepicker/assets/css/bootstrap-datetimepicker.min.css">
     <link href="https://fonts.cdnfonts.com/css/do-futuristic" rel="stylesheet">
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    
   </head>
   <!--
       <audio id="xyz" src="alarm.mp3" preload="auto"></audio>
   -->
   <body>
     <main>
-    
-    <div id="picker-container" "class="well">
-        <div id="title">KATHY'S TIME WARP</div>
-        <table>
-            <tr>
-                <td>
-                    <div class="std-text">REAL TIME</div>
-                </td>
-                <td>
-                    <div id="datetimepicker0" class="input-append">
-                          <input data-format="hh:mm:ss" type="text"></input>
-                          <span class="add-on">
-                                <i data-time-icon="icon-time" data-date-icon="icon-calendar"></i>
-                          </span>
-                    </div>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <div class="std-text">DISPLAY TIME</div>
-                </td>
-                <td>
-                    <div id="datetimepicker1" class="input-append">
-                          <input data-format="hh:mm:ss" type="text"></input>
-                          <span class="add-on">
-                                <i data-time-icon="icon-time" data-date-icon="icon-calendar"></i>
-                          </span>
-                    </div>
-                </td>
-            </tr>
-        </table>
-    </div>    
-    <div id="countdown-container">
-        <canvas id="countdown-canvas"></canvas>
+    <div id="page-one" class="page">
+        <div id="picker-container" class="well center">
+            <div id="title">KATHY'S TIME WARP</div>
+            <table>
+                <tr>
+                    <td>
+                        <div class="std-text">REAL TIME</div>
+                    </td>
+                    <td>
+                        <div id="datetimepicker0" class="input-append">
+                              <input data-format="hh:mm:ss" type="text"></input>
+                              <span class="add-on">
+                                    <i data-time-icon="icon-time" data-date-icon="icon-calendar"></i>
+                              </span>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="std-text">DISPLAY TIME</div>
+                    </td>
+                    <td>
+                        <div id="datetimepicker1" class="input-append">
+                              <input data-format="hh:mm:ss" type="text"></input>
+                              <span class="add-on">
+                                    <i data-time-icon="icon-time" data-date-icon="icon-calendar"></i>
+                              </span>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+            <div class="button">
+                <input id="start" type="submit" value="START!">
+            </div>
+        </div>
+    </div>
+    <div id="page-two" class="page">
+        <div id="countdown-container" class="center circle">
+            <canvas id="countdown-canvas"></canvas>
+        </div>
     </div>
     </main>
     <script
@@ -77,7 +85,8 @@
     <script type="text/javascript"
      src="https://tarruda.github.io/bootstrap-datetimepicker/assets/js/bootstrap-datetimepicker.pt-BR.js">
     </script>
-    <script type="text/javascript" src="./kathys_time_warp.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+    <script type="text/javascript" src="kathys_time_warp.js"></script>
   </body>
 </html>
 

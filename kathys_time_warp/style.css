@@ -3,6 +3,10 @@
   max-width: 500px;
 }
 
+html {
+    background-color: #EEEEEE;
+}
+
 div#title {
   margin: auto;
   width: 50%;
@@ -10,3 +14,38 @@ div#title {
   font-family: 'DO Futuristic', sans-serif;
   font-size: 20px; 
   }
+  
+div.page {
+  width: 100%;
+  text-align: center;
+  background-color: #EEEEEE;
+  padding: 10px;
+}
+
+div.center {
+    display: inline-block;
+    margin: 0 auto;
+    padding: 10px;
+    background-color: #EEEEEE;
+}
+
+div.circle {
+    
+    padding: 5px;
+
+}
+
+
+div.button {
+    display: inline-block;
+    margin: 0 auto;
+    padding: 5px;
+    width: 100%;
+}
+
+div.std-text {
+    padding: 5px;
+    text-align: right;
+    
+}
+
