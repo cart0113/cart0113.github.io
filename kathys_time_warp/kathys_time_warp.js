@@ -45,7 +45,9 @@ function create_timer() {
             //soundEffect.play();
             soundEffect0.pause();
             soundEffect0.src = "alarm.mp3";
-            soundEffect0.play();
+            if(musicOn) {
+                soundEffect0.play();
+            }
           }
        }
     ).start();
