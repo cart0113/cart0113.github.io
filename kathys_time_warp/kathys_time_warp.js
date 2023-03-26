@@ -1,6 +1,8 @@
-const soundEffect = new Audio();
-soundEffect.autoplay = true;
-soundEffect.src = "data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV";
+const soundEffect0 = new Audio();
+soundEffect0.autoplay = false;
+soundEffect0.loop = true;
+soundEffect0.src = "data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV";
+
 
 const containerEl = document.getElementById('countdown-container');
 const countdownEl = document.getElementById('countdown-canvas');
@@ -8,25 +10,31 @@ const countdownEl = document.getElementById('countdown-canvas');
 function create_timer() {
     
     var time_show = 300.0;
+    
+    soundEffect0.src = "count.mp3";
+    soundEffect0.play();
 
-
+    
     const countdown = new CanvasCircularCountdown(countdownEl, {
           duration: 5000.0,
           clockwise: true,
           radius: containerEl.getBoundingClientRect().width / 2,
           captionText: percentage => {
-              //if (percentage <= 0) {
-              //    return 'DONE ' + percentage * time_show;
-              //}
+              if (percentage <= 0) {
+                
+              }
               return percentage * time_show;
           }
       },
       (percentage, time, instance) => {
-          if (percentage == 0) {
+          if (percentage <= 1) {
             //https://stackoverflow.com/questions/21815323/have-sound-play-when-alert-is-triggered
             //document.getElementById('xyz').play(); 
             //soundEffect.src = "alarm.mp3";
             //soundEffect.play();
+            soundEffect0.pause();
+            soundEffect0.src = "alarm.mp3";
+            soundEffect0.play();
           }
        }
     ).start();
