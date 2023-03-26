@@ -18,7 +18,7 @@ function create_timer() {
     const countdown = new CanvasCircularCountdown(countdownEl, {
           duration: 5000.0,
           clockwise: true,
-          radius: containerEl.getBoundingClientRect().width / 2,
+          radius: containerEl.getBoundingClientRect().width / 4,
           captionText: percentage => {
               if (percentage <= 0) {
                 

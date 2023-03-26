@@ -4,7 +4,7 @@
 }
 
 body {
-    background-color: #EEEEEE;
+    background-color: #FFFFFF;
 }
 
 div#title {
@@ -18,7 +18,7 @@ div#title {
 div.page {
   width: 100%;
   text-align: center;
-  background-color: #EEEEEE;
+  background-color: #FFFFFF;
   padding: 1px;
 }
 
@@ -26,7 +26,7 @@ div.center {
     display: inline-block;
     margin: 0 auto;
     padding: 5px;
-    background-color: #EEEEEE;
+    background-color: #FFFFFF;
 }
 
 div.circle {
