@@ -12,7 +12,22 @@ const baseDate = new Date(Date.UTC(1998, 10, 11, 0, 0));
 
 var countdown = null;
 
-var musicOn = false;
+var musicOn = true;
+
+function toggleMusic() {
+    if(musicOn) {
+        musicOn = false;
+        soundEffect0.pause();
+        $('#music0').prop("value", 'SOUND IS OFF');
+        $('#music1').prop("value", 'SOUND IS OFF');
+    }
+    else {
+        musicOn = true;
+        soundEffect0.play();
+        $('#music0').prop("value", 'SOUND IS ON');
+        $('#music1').prop("value", 'SOUND IS ON');
+    }
+}
 
 function create_timer() {
     
@@ -23,12 +38,15 @@ function create_timer() {
         var timeDiff = percentage * (timeTwo) / 100.0;
         return msToHMS(timeDiff);
     }
-    
-    soundEffect0.src = "count.mp3";
-    soundEffect0.play();
 
-    musicOn = true;
+    soundEffect0.src = "countdown.mp3";
     
+    if(musicOn) {
+        $('#music0').prop("value", 'SOUND IS ON');
+        $('#music1').prop("value", 'SOUND IS ON');
+        soundEffect0.play();
+    }
+
     countdown = new CanvasCircularCountdown(countdownEl, {
           duration: timeOne,
           clockwise: true,
@@ -43,11 +61,12 @@ function create_timer() {
             //document.getElementById('xyz').play(); 
             //soundEffect.src = "alarm.mp3";
             //soundEffect.play();
+            musicOn = true;
+            $('#music0').prop("value", 'SOUND IS ON');
+            $('#music1').prop("value", 'SOUND IS ON');
             soundEffect0.pause();
             soundEffect0.src = "alarm.mp3";
-            if(musicOn) {
-                soundEffect0.play();
-            }
+            soundEffect0.play();
           }
        }
     ).start();
@@ -97,17 +116,12 @@ $( function() {
         event.preventDefault();
     });
 
-    $('#music').on("click", function(event) {
-        if(musicOn) {
-            musicOn = false;
-            soundEffect0.pause();
-            $('#music').prop("value", 'SOUND OFF');
-        }
-        else {
-            musicOn = true;
-            soundEffect0.play();
-            $('#music').prop("value", 'SOUND ON');
-        }
+    $('#music0').on("click", function(event) {
+        toggleMusic();
+        event.preventDefault();
+    });
+    $('#music1').on("click", function(event) {
+        toggleMusic();
         event.preventDefault();
     });
 
