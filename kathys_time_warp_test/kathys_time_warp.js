@@ -45,10 +45,13 @@ function done() {
     }
 }
 
+
+var dayTime = 1000.0 * 60 * 60 * 24;
+
 function create_timer() {
     
-    var timeOne = (picker0.getDate() % baseDate);
-    var timeTwo = (picker1.getDate() % baseDate); 
+    var timeOne = (picker0.getDate() % dayTime);
+    var timeTwo = (picker1.getDate() % dayTime); 
 
     function setTime(percentage) {
         var timeDiff = percentage * (timeTwo) / 100.0;
