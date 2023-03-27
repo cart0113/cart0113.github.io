@@ -48,6 +48,8 @@ function done() {
 
 var dayTime = 1000.0 * 60 * 60 * 24;
 
+var timeoutId = null; 
+
 function create_timer() {
     
     var timeOne = (picker0.getDate() % dayTime);
@@ -85,7 +87,7 @@ function create_timer() {
        }
     ).start();
 
-    setTimeout(done, timeOne * 0.5);
+    timeoutId = setTimeout(done, timeOne);
     
     let resizeTimeout;
     /*
@@ -127,6 +129,7 @@ $( function() {
         event.preventDefault();
     });
     $('#reset').on("click", function(event) {
+        clearTimeout(timeoutId);
         timerPage = false;
         $('#page-two').hide();
         $('#page-one').show();
