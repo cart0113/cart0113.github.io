@@ -58,7 +58,7 @@ function create_timer() {
           duration: timeOne,
           clockwise: true,
           //throttle: 0,
-          radius: containerEl.getBoundingClientRect().width / 4,
+          radius: containerEl.getBoundingClientRect().width / 3,
           captionText: setTime,
           elapsedTime: 1,
       },
