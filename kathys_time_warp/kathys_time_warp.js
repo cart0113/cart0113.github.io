@@ -14,6 +14,11 @@ var countdown = null;
 
 var musicOn = true;
 
+var timerPage = false;
+
+var noSleep = new NoSleep();
+var wakeLockEnabled = false;
+
 function toggleMusic() {
     if(musicOn) {
         musicOn = false;
@@ -23,7 +28,9 @@ function toggleMusic() {
     }
     else {
         musicOn = true;
-        soundEffect0.play();
+        if(timerPage){
+            soundEffect0.play();
+        }
         $('#music0').prop("value", 'SOUND IS ON');
         $('#music1').prop("value", 'SOUND IS ON');
     }
@@ -101,18 +108,25 @@ picker1.setDate(new Date(Date.UTC(1998, 10, 11, 0,  2)));
 $( function() {
     $('#page-two').hide();
     $('#start').on("click", function(event) {
+        timerPage = true;
         $('#page-one').hide();    
+        $("#page-two").attr("class", "page");
         $('#page-two').show();
         create_timer();
+        noSleep.enable(); // keep the screen on!
+        wakeLockEnabled = true;
         event.preventDefault();
     });
     $('#reset').on("click", function(event) {
+        timerPage = false;
         $('#page-two').hide();
         $('#page-one').show();
         soundEffect0.pause();
         countdown.stop();
         delete countdown;
         countdownEl.innerHTML = "";
+        noSleep.disable(); // let the screen turn off.
+        wakeLockEnabled = false;
         event.preventDefault();
     });
 
