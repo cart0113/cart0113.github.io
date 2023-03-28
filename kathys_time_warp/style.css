@@ -50,3 +50,12 @@ div.std-text {
 }
 
 .hidden { display: none; }
+
+button.my-button {
+    font-size: 18px; 
+    color: #666666;
+}
+
+/*
+https://codepen.io/MrStank/pen/NwXKQx
+*/

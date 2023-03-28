@@ -17,29 +17,40 @@ var timerPage = false;
 var noSleep = new NoSleep();
 var wakeLockEnabled = false;
 
+/*
+$("#music0").button({
+    icon: "ui-icon-gear"
+});
+$("#start").button({
+    showLabel: true,
+});
+*/
+
 function toggleMusic() {
     if(musicOn) {
         musicOn = false;
         soundEffect0.pause();
-        $('#music0').prop("value", 'SOUND IS OFF');
-        $('#music1').prop("value", 'SOUND IS OFF');
+        //$('#music0').prop("value", 'SOUND IS OFF');
+        //$('#music1').prop("value", 'SOUND IS OFF');
+        $('#music0-i').attr("class", "bi bi-volume-mute-fill");
+        $('#music1-i').attr("class", "bi bi-volume-mute-fill");
     }
     else {
         musicOn = true;
         if(timerPage){
             soundEffect0.play();
         }
-        $('#music0').prop("value", 'SOUND IS ON');
-        $('#music1').prop("value", 'SOUND IS ON');
+        $('#music0-i').attr("class", "bi bi-volume-up-fill");
+        $('#music1-i').attr("class", "bi bi-volume-up-fill");
     }
 }
 
 function done() {
     if(timerPage) {
-        musicOn = true;
         window.focus();
-        $('#music0').prop("value", 'SOUND IS ON');
-        $('#music1').prop("value", 'SOUND IS ON');
+        musicOn = true;
+        $('#music0-i').attr("class", "bi bi-volume-up-fill");
+        $('#music1-i').attr("class", "bi bi-volume-up-fill");
         soundEffect0.pause();
         soundEffect0.src = "alarm.mp3";
         soundEffect0.play();
