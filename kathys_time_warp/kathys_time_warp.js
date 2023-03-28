@@ -3,12 +3,10 @@ soundEffect0.autoplay = false;
 soundEffect0.loop = true;
 soundEffect0.src = "data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV";
 
-
 const containerEl = document.getElementById('countdown-container');
 const countdownEl = document.getElementById('countdown-canvas');
 
 const baseDate = new Date(Date.UTC(1998, 10, 11, 0, 0));
-
 
 var countdown = null;
 
@@ -36,10 +34,27 @@ function toggleMusic() {
     }
 }
 
+function done() {
+    if(timerPage) {
+        musicOn = true;
+        window.focus();
+        $('#music0').prop("value", 'SOUND IS ON');
+        $('#music1').prop("value", 'SOUND IS ON');
+        soundEffect0.pause();
+        soundEffect0.src = "alarm.mp3";
+        soundEffect0.play();
+    }
+}
+
+
+var dayTime = 1000.0 * 60 * 60 * 24;
+
+var timeoutId = null; 
+
 function create_timer() {
     
-    var timeOne = (picker0.getDate() - baseDate);
-    var timeTwo = (picker1.getDate() - baseDate); 
+    var timeOne = (picker0.getDate() % dayTime);
+    var timeTwo = (picker1.getDate() % dayTime); 
 
     function setTime(percentage) {
         var timeDiff = percentage * (timeTwo) / 100.0;
@@ -68,15 +83,12 @@ function create_timer() {
             //document.getElementById('xyz').play(); 
             //soundEffect.src = "alarm.mp3";
             //soundEffect.play();
-            musicOn = true;
-            $('#music0').prop("value", 'SOUND IS ON');
-            $('#music1').prop("value", 'SOUND IS ON');
-            soundEffect0.pause();
-            soundEffect0.src = "alarm.mp3";
-            soundEffect0.play();
+            done();
           }
        }
     ).start();
+
+    timeoutId = setTimeout(done, timeOne);
     
     let resizeTimeout;
     /*
@@ -118,6 +130,7 @@ $( function() {
         event.preventDefault();
     });
     $('#reset').on("click", function(event) {
+        clearTimeout(timeoutId);
         timerPage = false;
         $('#page-two').hide();
         $('#page-one').show();

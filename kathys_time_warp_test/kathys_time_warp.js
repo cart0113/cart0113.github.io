@@ -37,6 +37,7 @@ function toggleMusic() {
 function done() {
     if(timerPage) {
         musicOn = true;
+        window.focus();
         $('#music0').prop("value", 'SOUND IS ON');
         $('#music1').prop("value", 'SOUND IS ON');
         soundEffect0.pause();
