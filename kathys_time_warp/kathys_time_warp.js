@@ -53,6 +53,7 @@ function togglePlay(){
         $('#play-i').attr("class", "bi bi-play-fill");
         soundEffect0.pause();
         countdown.stop();
+        timer.pause();
     }
     else {
         doPlay = true;
@@ -61,6 +62,7 @@ function togglePlay(){
             soundEffect0.play();
         }
         countdown.start();
+        timer.resume();
     }
 }
 
@@ -70,7 +72,6 @@ function done() {
         musicOn = true;
         $('#music0-i').attr("class", "bi bi-volume-up-fill");
         $('#music1-i').attr("class", "bi bi-volume-up-fill");
-        soundEffect0.pause();
         soundEffect0.src = "alarm.mp3";
         soundEffect0.play();
     }
@@ -78,7 +79,7 @@ function done() {
 
 var dayTime = 1000.0 * 60 * 60 * 24;
 
-var timeoutId = null; 
+var timer = null; 
 
 function create_timer() {
     
@@ -118,8 +119,8 @@ function create_timer() {
           }
        }
     ).start();
-
-    timeoutId = setTimeout(done, timeOne);
+    
+    timer = new Timer(done, timeOne);
     
     let resizeTimeout;
     /*
@@ -164,7 +165,8 @@ $( function() {
         if(!doPlay){
             togglePlay();
         }
-        clearTimeout(timeoutId);
+        timer.delete();
+        timer = null;
         timerPage = false;
         $('#page-two').hide();
         $('#page-one').show();
@@ -222,3 +224,34 @@ function msToHMS( ms ) {
     seconds = seconds % 60;
     return hours + ":" + pad2(minutes) + ":" + pad2(seconds, '0');
 }
+
+
+var Timer = function(callback, delay) {
+    
+    var timerId, start, remaining = delay;
+
+    this.pause = function() {
+        window.clearTimeout(timerId);
+        timerId = null;
+        remaining -= Date.now() - start;
+    };
+
+    this.resume = function() {
+        if (timerId) {
+            return;
+        }
+
+        start = Date.now();
+        timerId = window.setTimeout(callback, remaining);
+    };
+
+    this.delete = function(){
+        window.clearTimeout(timerId);
+        timerId = null;
+    }
+
+    this.resume();
+    
+};
+
+
