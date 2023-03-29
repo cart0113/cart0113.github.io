@@ -37,11 +37,27 @@ function toggleMusic() {
     }
     else {
         musicOn = true;
-        if(timerPage){
+        if(doPlay && timerPage) {
             soundEffect0.play();
         }
         $('#music0-i').attr("class", "bi bi-volume-up-fill");
         $('#music1-i').attr("class", "bi bi-volume-up-fill");
+    }
+}
+
+var doPlay = true;
+function togglePlay(){
+    if(doPlay){
+        doPlay = False;
+        $('#play-i').attr("class", "bi bi-play-fill");
+        soundEffect0.pause();
+    }
+    else {
+        doPlay = True;
+        $('#play-i').attr("class", "bi bi-pause-fill");
+        if(musicOn) {
+            soundEffect0.play();
+        }
     }
 }
 
@@ -162,7 +178,10 @@ $( function() {
         toggleMusic();
         event.preventDefault();
     });
-
+    $('#play').on("click", function(event) {
+        togglePlay();
+        event.preventDefault();
+    });
 });
 
 
