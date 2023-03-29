@@ -46,18 +46,21 @@ function toggleMusic() {
 }
 
 var doPlay = true;
+
 function togglePlay(){
     if(doPlay){
-        doPlay = False;
+        doPlay = false;
         $('#play-i').attr("class", "bi bi-play-fill");
         soundEffect0.pause();
+        countdown.stop();
     }
     else {
-        doPlay = True;
+        doPlay = true;
         $('#play-i').attr("class", "bi bi-pause-fill");
         if(musicOn) {
             soundEffect0.play();
         }
+        countdown.start();
     }
 }
 
@@ -72,7 +75,6 @@ function done() {
         soundEffect0.play();
     }
 }
-
 
 var dayTime = 1000.0 * 60 * 60 * 24;
 
@@ -89,6 +91,8 @@ function create_timer() {
     }
 
     soundEffect0.src = "countdown.mp3";
+    
+    doPlay = true;
     
     if(musicOn) {
         $('#music0').prop("value", 'SOUND IS ON');
@@ -157,6 +161,9 @@ $( function() {
         event.preventDefault();
     });
     $('#reset').on("click", function(event) {
+        if(!doPlay){
+            togglePlay();
+        }
         clearTimeout(timeoutId);
         timerPage = false;
         $('#page-two').hide();
