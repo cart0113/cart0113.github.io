@@ -59,3 +59,19 @@ button.my-button {
 /*
 https://codepen.io/MrStank/pen/NwXKQx
 */
+
+
+
+/*
+https://www.daretothink.co.uk/stop-ios-styling-your-input-fields-and-buttons/
+*/
+
+textarea,
+input.text,
+input[type="text"],
+input[type="button"],
+input[type="submit"],
+.input-checkbox {
+-webkit-appearance: none;
+border-radius: 0;
+}
