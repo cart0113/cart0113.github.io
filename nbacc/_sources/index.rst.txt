@@ -1,12 +1,17 @@
 
-************************************************************************
-nba comeback calculator: what lead is safe and what comeback is possible
-************************************************************************
+***********************
+nba comeback calculator
+***********************
 
 .. toctree::
    :maxdepth: 1
+   :hidden:
 
    analysis/index
    methodology/index
    calculator/index
 
+What lead is safe and what comeback is possible?
+================================================
+
+I've always had a rule of thumb: 2x the number of points X minutes left is a safe lead (e.g. 8 points with 4 minutes left).  So one day I decided to grab some data from stats.nba.com and see how well this held up.  In doing so,
