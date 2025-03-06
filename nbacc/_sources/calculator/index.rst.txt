@@ -1,0 +1,17 @@
+
+**********
+calculator
+**********
+
+
+.. raw:: html
+
+    <div id="myChartDiv" class="chart-view" >
+        <canvas id="myChart" class="chartJsCanvas">
+        </canvas>
+    </div>
+    <div class="chart-actions">
+        <button id="buttonReset" class="ui-button ui-widget ui-corner-all">Reset Zoom</button>
+        <button id="buttonSave" class="ui-button ui-widget ui-corner-all">Save As Png</button>
+    </div>
+

@@ -1,0 +1,12 @@
+
+************************************************************************
+nba comeback calculator: what lead is safe and what comeback is possible
+************************************************************************
+
+.. toctree::
+   :maxdepth: 1
+
+   analysis/index
+   methodology/index
+   calculator/index
+
