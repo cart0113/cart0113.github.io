@@ -31,6 +31,7 @@
 <link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/css/nbacc.css?v=85123d31" />
   
   <!-- So that users can add custom icons -->
   <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -43,10 +44,11 @@
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'index';</script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.2.0/chartjs-plugin-zoom.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
-    <script src="_static/nba_chartjs_saveas_image_dialog.js?v=da36b352"></script>
-    <script src="_static/nba_chartjs_plotter.js?v=20c18819"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.2.0/chartjs-plugin-zoom.min.js"></script>
+    <script src="_static/js/nbacc_utils.js?v=c6b86e3f"></script>
+    <script src="_static/js/nbacc_saveas_image_dialog.js?v=299615db"></script>
+    <script src="_static/js/nbacc_plotter.js?v=20c18819"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="analysis" href="analysis/index.html" />
@@ -143,8 +145,15 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="calculator/index.html">
-    calculator
+  <a class="nav-link nav-internal" href="plots/index.html">
+    plots
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="interactive/index.html">
+    interactive
   </a>
 </li>
 
@@ -217,8 +226,15 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="calculator/index.html">
-    calculator
+  <a class="nav-link nav-internal" href="plots/index.html">
+    plots
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="interactive/index.html">
+    interactive
   </a>
 </li>
 
@@ -276,7 +292,14 @@
 </div>
 <section id="what-lead-is-safe-and-what-comeback-is-possible">
 <h2>What lead is safe and what comeback is possible?<a class="headerlink" href="#what-lead-is-safe-and-what-comeback-is-possible" title="Link to this heading">#</a></h2>
-<p>I’ve always had a rule of thumb: 2x the number of points X minutes left is a safe lead (e.g. 8 points with 4 minutes left).  So one day I decided to grab some data from stats.nba.com and see how well this held up.  In doing so,</p>
+<p>To examine this question, I downloaded all games from when play by play was available (from the 1996-1997 season
+to now) and look at the percent times games were won versus varying conditions.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="analysis/index.html"><span class="doc">analysis</span></a>:  Looks at some trends in the data and tries to answer the question “are big comebacks just much more common nowadays?”</p></li>
+<li><p><a class="reference internal" href="methodology/index.html"><span class="doc">methodology</span></a>: Covers how this data was put together.</p></li>
+<li><p><a class="reference internal" href="plots/index.html"><span class="doc">plots</span></a>: Provides a scrollalbe webpage of many different comeback plots (including ones for our Minnesota Timberwolves!).</p></li>
+<li><p><a class="reference internal" href="interactive/index.html"><span class="doc">interactive</span></a>: Provides a configurable plotting tool so you can slice and dice the data as you like (including for you favorite team).</p></li>
+</ul>
 </section>
 </section>
 

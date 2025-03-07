@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>calculator &#8212; nba comeback calculator  documentation</title>
+    <title>plots &#8212; nba comeback calculator  documentation</title>
   
   
   
@@ -31,6 +31,7 @@
 <link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/nbacc.css?v=85123d31" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -41,14 +42,16 @@
     <script src="../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'calculator/index';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'plots/index';</script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.2.0/chartjs-plugin-zoom.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
-    <script src="../_static/nba_chartjs_saveas_image_dialog.js?v=da36b352"></script>
-    <script src="../_static/nba_chartjs_plotter.js?v=20c18819"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.2.0/chartjs-plugin-zoom.min.js"></script>
+    <script src="../_static/js/nbacc_utils.js?v=c6b86e3f"></script>
+    <script src="../_static/js/nbacc_saveas_image_dialog.js?v=299615db"></script>
+    <script src="../_static/js/nbacc_plotter.js?v=20c18819"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="interactive" href="../interactive/index.html" />
     <link rel="prev" title="methodology" href="../methodology/index.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -144,7 +147,14 @@
 
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="#">
-    calculator
+    plots
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../interactive/index.html">
+    interactive
   </a>
 </li>
 
@@ -169,6 +179,10 @@
   
   
 
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
   
 </div>
 
@@ -212,7 +226,14 @@
 
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="#">
-    calculator
+    plots
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../interactive/index.html">
+    interactive
   </a>
 </li>
 
@@ -271,7 +292,7 @@
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">calculator</span></li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">plots</span></li>
   </ul>
 </nav>
 </div>
@@ -288,16 +309,18 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="calculator">
-<h1>calculator<a class="headerlink" href="#calculator" title="Link to this heading">#</a></h1>
-<div id="myChartDiv" class="chart-view" >
-    <canvas id="myChart" class="chartJsCanvas">
-    </canvas>
-</div>
-<div class="chart-actions">
-    <button id="buttonReset" class="ui-button ui-widget ui-corner-all">Reset Zoom</button>
-    <button id="buttonSave" class="ui-button ui-widget ui-corner-all">Save As Png</button>
-</div></section>
+  <section id="plots">
+<h1>plots<a class="headerlink" href="#plots" title="Link to this heading">#</a></h1>
+<section id="percent-time-won-versus-time-left">
+<h2>Percent Time Won Versus Time Left<a class="headerlink" href="#percent-time-won-versus-time-left" title="Link to this heading">#</a></h2>
+</section>
+<section id="percent-time-won-versus-point-deficit-time">
+<h2>Percent Time Won Versus Point Deficit &#64; Time<a class="headerlink" href="#percent-time-won-versus-point-deficit-time" title="Link to this heading">#</a></h2>
+</section>
+<section id="percent-time-won-versus-max-point-deficit-from-time">
+<h2>Percent Time Won Versus Max Point Deficit From Time<a class="headerlink" href="#percent-time-won-versus-max-point-deficit-from-time" title="Link to this heading">#</a></h2>
+</section>
+</section>
 
 
                 </article>
@@ -309,6 +332,26 @@
             </div>
             
             
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#percent-time-won-versus-time-left">Percent Time Won Versus Time Left</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#percent-time-won-versus-point-deficit-time">Percent Time Won Versus Point Deficit @ Time</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#percent-time-won-versus-max-point-deficit-from-time">Percent Time Won Versus Max Point Deficit From Time</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
               
             
           </div>
