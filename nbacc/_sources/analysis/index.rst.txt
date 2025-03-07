@@ -3,26 +3,10 @@
 analysis
 ********
 
+.. toctree::
+   :maxdepth: 1
 
-20 is the new 19
-================
+   20_is_new_19
+   10_year_breakdown
 
-Largest Deficit Comebacks
-=========================
-
-Comeback % Starting Time
-========================
-
-
-
-Largest Deficit *or More* Comebacks
-===================================
-
-
-
-..
-    .. toctree::
-       :maxdepth: 1
-
-       nba_point_margin_probabilites
 
