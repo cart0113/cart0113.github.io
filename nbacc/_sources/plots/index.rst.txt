@@ -1,0 +1,16 @@
+
+*****
+plots
+*****
+
+
+Percent Time Won Versus Time Left
+=================================
+
+
+Percent Time Won Versus Point Deficit @ Time
+============================================
+
+
+Percent Time Won Versus Max Point Deficit From Time
+===================================================

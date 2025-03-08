@@ -1,0 +1,229 @@
+/* https://pydata-sphinx-theme.readthedocs.io/en/v0.8.1/user_guide/customizing.html */
+
+:root {
+    --pst-font-size-base: 16px;
+    /* heading font sizes */
+    --pst-font-size-h1: 27px;
+    --pst-font-size-h2: 23px;
+    --pst-font-size-h3: 19px;
+    --pst-font-size-h4: 17px;
+    --pst-font-size-h5: 15px;
+    --pst-font-size-h6: 15px;
+}
+@media only screen and (max-device-width: 480px) {
+    :root {
+        --pst-font-size-base: 15px;
+
+         /* heading font sizes */
+         --pst-font-size-h1: 24px;
+         --pst-font-size-h2: 20px;
+         --pst-font-size-h3: 16px;
+         --pst-font-size-h4: 15px;
+         --pst-font-size-h5: 15px;
+         --pst-font-size-h6: 15px;
+    }
+}
+
+h1:hover > a.headerlink, h2:hover > a.headerlink, h3:hover > a.headerlink, h4:hover > a.headerlink, h5:hover > a.headerlink, h6:hover > a.headerlink, dt:hover > a.headerlink, caption:hover > a.headerlink, p.caption:hover > a.headerlink, div.code-block-caption:hover > a.headerlink {
+  visibility: hidden;
+}
+
+.ui-button {
+  background: #638ea7; /* Green background */
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  text-align: center;
+  font-weight: normal;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 18px;
+  border-radius: 5px; /* Rounded corners */
+}
+
+.ui-button:hover {
+  background-color: #b5c8dc;
+}
+
+.ui-button:active {
+    background-color: #638ea7;
+}
+.chartJsCanvas {
+    padding: 10px;
+}
+
+/* Chart container styles - updated for better canvas rendering */
+.nbacc-chart {
+    width: 100%;
+    height: auto;
+    min-height: 400px;
+    margin: 20px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    background-color: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+}
+
+/* Chart container styles - fixed layout problems */
+div.nba-cc.chart {
+    width: 100%;
+    height: auto;
+    min-height: 450px; /* Increased from 560px to 650px */
+    margin: 20px 0;
+    border: 1px solid #999; /* Darker border color */
+    border-radius: 4px;
+    padding: 15px; /* Slightly more padding */
+    background-color: #f5f5f5; /* Light grey background */
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15); /* Enhanced shadow */
+    box-sizing: border-box;
+    position: relative;
+    margin-bottom: 30px;
+    border-radius: 5px;
+}
+
+.chart-container {
+    width: 100%;
+    height: 400px; /* Increased from 500px to 600px */
+    position: relative !important;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+    background-color: white; /* White background for the actual chart */
+    border-radius: 3px;
+    padding: 5px;
+    /* max-width: 1000px; /* Add a max-width to prevent it from becoming too wide */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Canvas specific styling - simplified */
+.chart-container canvas {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    outline: none !important; /* Remove the focus outline */
+}
+
+/* Also remove focus outline from the canvas when focused */
+.chart-container canvas:focus {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
+/* Critical fix for Chart.js canvas rendering */
+canvas {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Chart controls now outside chart container */
+.chart-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 5px;
+}
+
+.chart-button {
+    padding: 8px 15px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+/* Chart loading indicator */
+.chart-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    color: #666;
+    font-style: italic;
+    height: 400px;
+    background-color: #f8f9fa;
+    color: #495057;
+    font-size: 18px;
+    border-radius: 4px;
+}
+
+.chart-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin: 10px 0;
+}
+
+.chart-btn {
+    padding: 8px 16px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    color: #212529;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.chart-btn:hover {
+    background-color: #e9ecef;
+    border-color: #ced4da;
+}
+
+.reset-zoom-btn {
+    background-color: #e7f5ff;
+    border-color: #74c0fc;
+}
+
+.reset-zoom-btn:hover {
+    background-color: #d0ebff;
+    border-color: #339af0;
+}
+
+.save-png-btn {
+    background-color: #f8f9fa;
+    border-color: #adb5bd;
+}
+
+.save-png-btn:hover {
+    background-color: #e9ecef;
+    border-color: #6c757d;
+}
+
+/* Chart error message */
+.chart-error {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    color: #d32f2f;
+    text-align: center;
+    padding: 20px;
+    background-color: #ffebee;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+/* Responsive adjustments */
+@media only screen and (max-width: 768px) {
+    .chart-container {
+        height: 400px; /* Increased from 400px to 500px */
+    }
+
+    .chart-button {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+}
+
+/* Add a new media query for larger screens to maintain a more square aspect ratio */
+@media only screen and (min-width: 1200px) {
+    .chart-container {
+        width: 90%;
+        max-width: 900px; /* Limit the width on large screens for a more square shape */
+    }
+}
+
