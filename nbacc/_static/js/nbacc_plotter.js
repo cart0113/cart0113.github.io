@@ -1264,6 +1264,11 @@ function addControlsToChartArea(canvas, chart) {
             chartContainer.style.maxWidth = "98%";
             chartContainer.style.maxHeight = "85vh";
 
+            // Disable normal page pinch-zoom by setting touch-action to none
+            // This will only allow our custom chart zooming to work
+            document.body.style.touchAction = "none";
+            chartContainer.style.touchAction = "none";
+            
             // For mobile in fullscreen mode, enable zooming
             if (chart.options.plugins && chart.options.plugins.zoom) {
                 chart.options.plugins.zoom.zoom.drag.enabled = true;
@@ -1342,6 +1347,11 @@ function addControlsToChartArea(canvas, chart) {
 
         // If on mobile, disable zooming and remove reset zoom button before restoring
         if (isMobile() && chart.options.plugins && chart.options.plugins.zoom) {
+            // Re-enable normal page pinch-zoom by resetting touch-action
+            document.body.style.touchAction = "";
+            const chartContainer = chart.canvas.parentElement;
+            chartContainer.style.touchAction = "";
+            
             // Disable zooming on mobile when exiting fullscreen
             chart.options.plugins.zoom.zoom.drag.enabled = false;
             chart.options.plugins.zoom.zoom.pinch.enabled = false;
