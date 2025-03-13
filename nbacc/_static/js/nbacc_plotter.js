@@ -441,7 +441,7 @@ function formatDataForChartJS(chartData) {
                                 }
                             }
                             innerHtml += `<tr><td style="padding:0px 5px; font-family:'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; letter-spacing: 0.1px; line-height: 1.1; font-size:${gameFontSize};">
-                                <a href="${gameUrl}" target="_blank" rel="noopener noreferrer" style="color: #78c6ff; text-decoration: underline; padding: 1px 0;">
+                                <a href="${gameUrl}" style="color: #78c6ff; text-decoration: underline; padding: 1px 0;">
                                 ${formattedDate}${game.game_summary}</a></td></tr>`;
                         });
 
@@ -476,7 +476,7 @@ function formatDataForChartJS(chartData) {
                                 }
                             }
                             innerHtml += `<tr><td style="padding:0px 5px; font-family:'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; letter-spacing: 0.1px; line-height: 1.1; font-size:${gameFontSize};">
-                                <a href="${gameUrl}" target="_blank" rel="noopener noreferrer" style="color: #78c6ff; text-decoration: underline; padding: 1px 0;">
+                                <a href="${gameUrl}" style="color: #78c6ff; text-decoration: underline; padding: 1px 0;">
                                 ${formattedDate}${game.game_summary}</a></td></tr>`;
                         });
 
