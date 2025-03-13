@@ -1137,12 +1137,23 @@ document.addEventListener("DOMContentLoaded", function () {
     document.head.appendChild(style);
 });
 
-// Function to make buttons stay in position during zoom
+// Function to make buttons stay in position during zoom and pan
 function updateButtonPositions(chart) {
+    // First try to find the button container using the chart's canvas ID
     const chartId = chart.canvas.id.replace("-canvas", "");
-    const buttonContainer = document.querySelector(
+    
+    // Need to handle both regular chart containers and fullscreen containers
+    let buttonContainer = document.querySelector(
         `#${chartId} .chart-container .chart-buttons`
     );
+    
+    // If not found, check if we're in fullscreen mode
+    if (!buttonContainer) {
+        // Try to find button container in the lightbox
+        buttonContainer = document.querySelector(
+            `#lightbox-chart-container .chart-container .chart-buttons`
+        );
+    }
 
     if (buttonContainer && chart.chartArea) {
         // Ensure the buttons are visible
@@ -1150,35 +1161,72 @@ function updateButtonPositions(chart) {
 
         // Most important: position relative to the actual chart area
         const chartArea = chart.chartArea;
-
-        // Important: get the positioning relative to the chart area, not the container
-        // Calculate where to place buttons based on the actual chart area coordinates
-        const distanceFromBottom = 20; // Set to 20px
-
-        // Convert chart area coordinates to container coordinates
-        // Calculate bottom position in pixels from the bottom of the container
-        const bottomPosition = chart.height - chartArea.bottom + distanceFromBottom;
-
-        // Set position relative to the actual chart (this is crucial)
-        buttonContainer.style.position = "absolute";
-        buttonContainer.style.bottom = `${bottomPosition}px`;
-
-        // Adjust the right position based on device type
-        // On mobile, position is different but now we also have the full screen button
-        if (isMobile()) {
-            buttonContainer.style.right = "20px"; // Position for mobile with buttons
+        
+        // Calculate the button dimensions - force a reflow if needed
+        let buttonContainerWidth = buttonContainer.offsetWidth;
+        let buttonContainerHeight = buttonContainer.offsetHeight;
+        
+        // If dimensions are 0, make the container visible temporarily to measure
+        const wasHidden = buttonContainer.style.opacity === "0";
+        if (!buttonContainerWidth || !buttonContainerHeight) {
+            const originalOpacity = buttonContainer.style.opacity;
+            buttonContainer.style.opacity = "0.01"; // Barely visible for measurement
+            buttonContainer.style.visibility = "visible";
+            
+            // Force reflow and remeasure
+            setTimeout(() => {
+                buttonContainerWidth = buttonContainer.offsetWidth || 120;
+                buttonContainerHeight = buttonContainer.offsetHeight || 40;
+                
+                // Position after getting correct dimensions
+                positionButtons();
+                
+                // Reveal buttons after they are positioned correctly
+                setTimeout(() => {
+                    buttonContainer.style.opacity = "0.9";
+                }, 10);
+            }, 0);
         } else {
-            buttonContainer.style.right = "90px"; // Standard position for desktop
+            // We already have dimensions, position immediately
+            positionButtons();
+            // Reveal buttons after a brief delay to ensure they're positioned correctly
+            setTimeout(() => {
+                buttonContainer.style.opacity = "0.9";
+            }, 10);
         }
+        
+        // Helper function to position the buttons now that we have dimensions
+        function positionButtons() {
+            // Adjust margins based on if we're in fullscreen mode
+            const isFullscreen = chart.isFullscreen || 
+                buttonContainer.closest('.nba-fullscreen-lightbox') !== null;
+                
+            // Adjust margins based on display mode and device
+            const marginRight = isFullscreen ? (isMobile() ? 20 : 30) : (isMobile() ? 10 : 20);
+            const marginBottom = isFullscreen ? 20 : 10;
+            
+            // Always position the buttons inside the chart area, regardless of zoom/pan level
+            buttonContainer.style.position = "absolute";
+            
+            // Position from the right edge of the chart area
+            buttonContainer.style.left = `${chartArea.right - buttonContainerWidth - marginRight}px`;
+            
+            // Position from the bottom edge of the chart area
+            buttonContainer.style.top = `${chartArea.bottom - buttonContainerHeight - marginBottom}px`;
+            
+            // Remove bottom and right positioning which could conflict
+            buttonContainer.style.bottom = "auto";
+            buttonContainer.style.right = "auto";
 
-        // Make buttons visible with a smooth transition once positioned
-        buttonContainer.style.opacity = "0.85"; // Ensure consistent opacity during zoom
-        buttonContainer.style.transition = "opacity 0.05s ease";
-
-        // For debugging purposes only - add data attributes to see what's happening
-        buttonContainer.dataset.chartAreaBottom = chartArea.bottom;
-        buttonContainer.dataset.chartHeight = chart.height;
-        buttonContainer.dataset.calculatedBottom = bottomPosition;
+            // Ensure buttons remain above the chart
+            buttonContainer.style.zIndex = "10";
+            
+            // Add subtle transition for smoother repositioning
+            buttonContainer.style.transition = "all 0.15s ease-out";
+            
+            // Add drop shadow to make buttons more visible on various backgrounds
+            buttonContainer.style.filter = "drop-shadow(0px 2px 3px rgba(0,0,0,0.3))";
+        }
     }
 }
 
@@ -1333,6 +1381,17 @@ function addControlsToChartArea(canvas, chart) {
         fullScreenButton.setAttribute("data-tooltip", "Exit Full Screen");
         fullScreenButton.setAttribute("data-fullscreen", "true");
         fullScreenButton.onclick = exitFullScreen;
+        
+        // Hide the buttons before repositioning
+        const buttonContainer = parentChartDiv.querySelector(".chart-buttons");
+        if (buttonContainer) {
+            buttonContainer.style.opacity = "0";
+        }
+        
+        // Update button positions with a shorter delay
+        setTimeout(() => {
+            updateButtonPositions(chart);
+        }, 50);
     }
 
     function exitFullScreen(event) {
@@ -1341,11 +1400,9 @@ function addControlsToChartArea(canvas, chart) {
         // Re-enable page scrolling
         document.body.style.overflow = "";
         
-        // Reset zoom before exiting fullscreen - this is important to ensure 
-        // we don't return to normal view with a zoomed chart
+        // Always reset zoom before exiting fullscreen (for both mobile and desktop)
         chart.resetZoom();
 
-        // If on mobile, disable zooming and remove reset zoom button before restoring
         if (isMobile() && chart.options.plugins && chart.options.plugins.zoom) {
             // Re-enable normal page pinch-zoom by resetting touch-action
             document.body.style.touchAction = "";
@@ -1379,6 +1436,9 @@ function addControlsToChartArea(canvas, chart) {
 
             // We need to update the chart to reflect these changes
             chart.update();
+        } else if (!isMobile() && chart.options.plugins && chart.options.plugins.zoom) {
+            // For desktop, ensure the chart is updated after zoom reset
+            chart.update();
         }
 
         // Close lightbox
@@ -1400,6 +1460,17 @@ function addControlsToChartArea(canvas, chart) {
 
         // Resize chart to fit original container
         chart.resize();
+        
+        // Hide the buttons before repositioning
+        const buttonContainer = chart.parentChartDiv.querySelector(".chart-buttons");
+        if (buttonContainer) {
+            buttonContainer.style.opacity = "0";
+        }
+        
+        // Update button positions with a shorter delay
+        setTimeout(() => {
+            updateButtonPositions(chart);
+        }, 50);
     }
 
     fullScreenButton.onclick = fullscreen;
@@ -1456,19 +1527,21 @@ function addControlsToChartArea(canvas, chart) {
     const chartContainer = canvas.parentElement;
     chartContainer.appendChild(buttonContainer);
 
-    // Set an initial position - will be corrected by updateButtonPositions
+    // Set initial styles - positioning will be handled by updateButtonPositions
     buttonContainer.style.position = "absolute";
-    buttonContainer.style.bottom = "30px"; // Just a placeholder, updateButtonPositions will set the proper value
-
-    // Set the initial right position based on device type
-    if (isMobile()) {
-        buttonContainer.style.right = "20px"; // Position for mobile with buttons
-    } else {
-        buttonContainer.style.right = "90px"; // Standard position for desktop
-    }
-    // Don't set display:flex or opacity yet - wait until updateButtonPositions is called
-
-    updateButtonPositions(chart);
+    buttonContainer.style.zIndex = "10"; // Ensure buttons are above chart
+    buttonContainer.style.display = "flex"; // Always use flex display
+    buttonContainer.style.alignItems = "center"; // Vertically center buttons
+    buttonContainer.style.filter = "drop-shadow(0px 2px 3px rgba(0,0,0,0.3))"; // Add shadow for visibility
+    buttonContainer.style.opacity = "0"; // Start invisible and fade in with updateButtonPositions
+    
+    // Prevent text selection on buttons
+    buttonContainer.style.userSelect = "none";
+    
+    // Wait for the chart to be fully rendered before positioning
+    setTimeout(() => {
+        updateButtonPositions(chart);
+    }, 100);
 
     // Also update button positions whenever the window is resized
     window.addEventListener("resize", () => {
