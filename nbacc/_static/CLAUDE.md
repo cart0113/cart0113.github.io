@@ -22,7 +22,10 @@
 
 ## Important Sections
 
+When you see "Add the important comment X", it means to add a comment in the code and also add it to this section for future reference.
+
 - **CHART_BACKGROUND_COLOR**: Chart plot area background color and opacity setting in plotBackgroundPlugin
+- **FULL_SCREEN_FUNCTIONS**: Full screen and exit full screen functionality for all devices including mobile
 
 ## Architecture
 

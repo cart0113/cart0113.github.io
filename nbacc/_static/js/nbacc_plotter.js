@@ -1142,10 +1142,10 @@ function updateButtonPositions(chart) {
         buttonContainer.style.position = "absolute";
         buttonContainer.style.bottom = `${bottomPosition}px`;
         
-        // Adjust the right position based on device type and whether fullscreen is enabled
-        // On mobile, position is different since we only have the save button
+        // Adjust the right position based on device type
+        // On mobile, position is different but now we also have the full screen button
         if (isMobile()) {
-            buttonContainer.style.right = "30px"; // Not too far right on mobile
+            buttonContainer.style.right = "20px"; // Position for mobile with buttons
         } else {
             buttonContainer.style.right = "90px"; // Standard position for desktop
         }
@@ -1197,96 +1197,103 @@ function addControlsToChartArea(canvas, chart) {
     buttonContainer.style.margin = "0"; // No margin
     buttonContainer.style.padding = "0"; // No padding
 
-    // Only add Full Screen button if not on mobile
-    if (!isMobile()) {
-        // Add Full Screen button with icon
-        const fullScreenButton = document.createElement("button");
-        fullScreenButton.className = "chart-btn full-screen-btn";
-        fullScreenButton.title = "Full Screen"; // Standard title
-        fullScreenButton.setAttribute("aria-label", "Full Screen"); // Accessibility
-        fullScreenButton.setAttribute("data-tooltip", "Full Screen"); // Custom tooltip
-        fullScreenButton.innerHTML = '<i class="chart-icon full-screen-icon"></i>';
-        fullScreenButton.setAttribute("data-fullscreen", "false"); // Track state
+    // FULL_SCREEN_FUNCTIONS - Full screen and exit full screen functionality for all devices including mobile
+    // Add Full Screen button for all devices
+    const fullScreenButton = document.createElement("button");
+    fullScreenButton.className = "chart-btn full-screen-btn";
+    fullScreenButton.title = "Full Screen"; // Standard title
+    fullScreenButton.setAttribute("aria-label", "Full Screen"); // Accessibility
+    fullScreenButton.setAttribute("data-tooltip", "Full Screen"); // Custom tooltip
+    fullScreenButton.innerHTML = '<i class="chart-icon full-screen-icon"></i>';
+    fullScreenButton.setAttribute("data-fullscreen", "false"); // Track state
 
-        function fullscreen(event) {
-            chartJsToolTipClearer(event);
-            // Show lightbox
-            lightboxInstance.show();
+    function fullscreen(event) {
+        chartJsToolTipClearer(event);
+        // Show lightbox
+        lightboxInstance.show();
 
-            // Going into fullscreen mode
-            const lightboxContent = document.getElementById("lightbox-chart-container");
+        // Going into fullscreen mode
+        const lightboxContent = document.getElementById("lightbox-chart-container");
 
-            // Store original parent before moving
-            var mainChartDiv = chart.canvas.parentElement.parentElement.parentElement;
-            chart.mainChartDiv = mainChartDiv;
+        // Store original parent before moving
+        var mainChartDiv = chart.canvas.parentElement.parentElement.parentElement;
+        chart.mainChartDiv = mainChartDiv;
 
-            // Store original dimensions to restore them later
-            const chartContainer = chart.canvas.parentElement;
-            chart.originalWidth = chartContainer.style.width;
-            chart.originalHeight = chartContainer.style.height;
-            chart.originalMaxWidth = chartContainer.style.maxWidth;
-            chart.originalMaxHeight = chartContainer.style.maxHeight;
+        // Store original dimensions to restore them later
+        const chartContainer = chart.canvas.parentElement;
+        chart.originalWidth = chartContainer.style.width;
+        chart.originalHeight = chartContainer.style.height;
+        chart.originalMaxWidth = chartContainer.style.maxWidth;
+        chart.originalMaxHeight = chartContainer.style.maxHeight;
 
-            // Move the canvas to lightbox
-            var parentChartDiv = chart.canvas.parentElement.parentElement;
-            chart.parentChartDiv = parentChartDiv;
-            lightboxContent.appendChild(parentChartDiv);
+        // Move the canvas to lightbox
+        var parentChartDiv = chart.canvas.parentElement.parentElement;
+        chart.parentChartDiv = parentChartDiv;
+        lightboxContent.appendChild(parentChartDiv);
 
-            // Set fullscreen dimensions
+        // Set fullscreen dimensions
+        if (isMobile()) {
+            // Mobile needs different dimensions for best viewing
+            chartContainer.style.width = "98%";
+            chartContainer.style.height = "85vh"; 
+            chartContainer.style.maxWidth = "98%";
+            chartContainer.style.maxHeight = "85vh";
+        } else {
+            // Desktop dimensions
             chartContainer.style.width = "95%";
             chartContainer.style.height = "90vh";
             chartContainer.style.maxWidth = "95%";
             chartContainer.style.maxHeight = "90vh";
-
-            // Resize chart to fit new container
-            chart.resize();
-
-            // Update button state
-            fullScreenButton.innerHTML =
-                '<i class="chart-icon exit-full-screen-icon"></i>';
-            fullScreenButton.setAttribute("data-tooltip", "Exit Full Screen");
-            fullScreenButton.setAttribute("data-fullscreen", "true");
-            fullScreenButton.onclick = exitFullScreen;
         }
 
-        function exitFullScreen(event) {
-            chartJsToolTipClearer(event);
+        // Resize chart to fit new container
+        chart.resize();
 
-            // Close lightbox
-            fullScreenButton.innerHTML = '<i class="chart-icon full-screen-icon"></i>';
-            fullScreenButton.setAttribute("data-tooltip", "Full Screen");
-            fullScreenButton.setAttribute("data-fullscreen", "false");
-            fullScreenButton.onclick = fullscreen;
-            lightboxInstance.close();
-
-            // Restore chart to original parent
-            chart.mainChartDiv.appendChild(chart.parentChartDiv);
-
-            // Restore original dimensions
-            const chartContainer = chart.canvas.parentElement;
-            chartContainer.style.width = chart.originalWidth || "";
-            chartContainer.style.height = chart.originalHeight || "";
-            chartContainer.style.maxWidth = chart.originalMaxWidth || "";
-            chartContainer.style.maxHeight = chart.originalMaxHeight || "";
-
-            // Resize chart to fit original container
-            chart.resize();
-        }
-
-        fullScreenButton.onclick = fullscreen;
-
-        // Setup ESC key handler
-        const handleEscKey = function (e) {
-            if (e.key === "Escape" && lightboxInstance) {
-                exitFullScreen(e);
-                document.removeEventListener("keydown", handleEscKey);
-            }
-        };
-
-        document.addEventListener("keydown", handleEscKey);
-
-        buttonContainer.appendChild(fullScreenButton);
+        // Update button state
+        fullScreenButton.innerHTML =
+            '<i class="chart-icon exit-full-screen-icon"></i>';
+        fullScreenButton.setAttribute("data-tooltip", "Exit Full Screen");
+        fullScreenButton.setAttribute("data-fullscreen", "true");
+        fullScreenButton.onclick = exitFullScreen;
     }
+
+    function exitFullScreen(event) {
+        chartJsToolTipClearer(event);
+
+        // Close lightbox
+        fullScreenButton.innerHTML = '<i class="chart-icon full-screen-icon"></i>';
+        fullScreenButton.setAttribute("data-tooltip", "Full Screen");
+        fullScreenButton.setAttribute("data-fullscreen", "false");
+        fullScreenButton.onclick = fullscreen;
+        lightboxInstance.close();
+
+        // Restore chart to original parent
+        chart.mainChartDiv.appendChild(chart.parentChartDiv);
+
+        // Restore original dimensions
+        const chartContainer = chart.canvas.parentElement;
+        chartContainer.style.width = chart.originalWidth || "";
+        chartContainer.style.height = chart.originalHeight || "";
+        chartContainer.style.maxWidth = chart.originalMaxWidth || "";
+        chartContainer.style.maxHeight = chart.originalMaxHeight || "";
+
+        // Resize chart to fit original container
+        chart.resize();
+    }
+
+    fullScreenButton.onclick = fullscreen;
+
+    // Setup ESC key handler
+    const handleEscKey = function (e) {
+        if (e.key === "Escape" && lightboxInstance) {
+            exitFullScreen(e);
+            document.removeEventListener("keydown", handleEscKey);
+        }
+    };
+
+    document.addEventListener("keydown", handleEscKey);
+
+    buttonContainer.appendChild(fullScreenButton);
 
     // Add Reset Zoom button with icon - only for non-mobile
     if (!isMobile()) {
@@ -1333,7 +1340,7 @@ function addControlsToChartArea(canvas, chart) {
     
     // Set the initial right position based on device type
     if (isMobile()) {
-        buttonContainer.style.right = "30px"; // Not too far right on mobile
+        buttonContainer.style.right = "20px"; // Position for mobile with buttons
     } else {
         buttonContainer.style.right = "90px"; // Standard position for desktop
     }
