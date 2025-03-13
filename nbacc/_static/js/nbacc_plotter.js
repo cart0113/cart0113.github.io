@@ -2,7 +2,7 @@
 const zoomOptions = {
     zoom: {
         drag: {
-            enabled: true,
+            enabled: !isMobile(), // Disable drag zoom on mobile
             backgroundColor: "rgba(109, 102, 102, 0.3)",
             borderColor: "rgba(225,225,225,0.6)",
             borderWidth: 1,
@@ -12,7 +12,7 @@ const zoomOptions = {
             enabled: false,
         },
         pinch: {
-            enabled: true,
+            enabled: !isMobile(), // Disable pinch zoom on mobile
             backgroundColor: "rgba(109, 102, 102, 0.3)",
             borderColor: "rgba(225,225,225,0.6)",
             borderWidth: 1,
@@ -31,7 +31,7 @@ const zoomOptions = {
         },
     },
     pan: {
-        enabled: true,
+        enabled: !isMobile(), // Disable panning on mobile
         mode: "xy",
         threshold: 5, // Minimum distance required before pan is registered
         modifierKey: "shift", // Hold shift key to pan (optional, prevents accidental panning)
@@ -173,6 +173,9 @@ function formatDataForChartJS(chartData) {
     const winCountPlugin = {
         id: "winCountPlugin",
         afterDatasetsDraw: (chart) => {
+            // Skip drawing win counts on mobile devices
+            if (isMobile()) return;
+            
             const ctx = chart.ctx;
 
             chart.data.datasets.forEach((dataset, datasetIndex) => {
@@ -727,7 +730,7 @@ function formatDataForChartJS(chartData) {
                     min: Math.min(...chartData.y_ticks) - 0.2,
                     max: Math.max(...chartData.y_ticks) + 0.2,
                     title: {
-                        display: true,
+                        display: !isMobile(), // Don't display y axis label on mobile
                         text: chartData.y_label,
                         font: {
                             size: 14,
@@ -761,8 +764,9 @@ function formatDataForChartJS(chartData) {
                 },
                 y1: {
                     position: "right",
+                    display: !isMobile(), // Don't display right y axis on mobile
                     title: {
-                        display: true,
+                        display: !isMobile(), // Don't display y axis label on mobile
                         font: {
                             size: 14,
                             weight: "bold",
@@ -844,9 +848,9 @@ function formatDataForChartJS(chartData) {
                 type: "line", // Explicitly set type
                 borderColor: color,
                 backgroundColor: "transparent",
-                borderWidth: 5,
-                pointRadius: 4, // Increased for better interaction target
-                pointHoverRadius: 10, // Increased hover radius for easier hitting
+                borderWidth: isMobile() ? 4 : 5, // Thinner line on mobile
+                pointRadius: isMobile() ? 3 : 4, // Smaller points on mobile
+                pointHoverRadius: isMobile() ? 7 : 10, // Smaller hover radius on mobile
                 pointStyle: "circle", // Round points
                 pointBackgroundColor: color,
                 pointBorderColor: color, // Same color as the point to remove white border
@@ -888,8 +892,8 @@ function formatDataForChartJS(chartData) {
                 borderColor: color,
                 backgroundColor: color.replace("0.5", "0.7"),
                 pointStyle: "rectRounded",
-                pointRadius: 8, // Size of scatter points
-                pointHoverRadius: 12, // Larger hover radius
+                pointRadius: isMobile() ? 5.6 : 8, // Reduced size by ~30% on mobile
+                pointHoverRadius: isMobile() ? 8 : 12, // Also reduce hover radius on mobile
                 showLine: false, // Ensure no line is drawn
                 label: line.legend,
                 // Hover behavior for scatter points
@@ -1009,7 +1013,14 @@ function updateButtonPositions(chart) {
         // Set position relative to the actual chart (this is crucial)
         buttonContainer.style.position = "absolute";
         buttonContainer.style.bottom = `${bottomPosition}px`;
-        buttonContainer.style.right = "90px"; // Keep consistent right position
+        
+        // Adjust the right position based on device type and whether fullscreen is enabled
+        // On mobile, we need to move buttons more to the right since fullscreen button is hidden
+        if (isMobile()) {
+            buttonContainer.style.right = "20px"; // Position closer to the right on mobile
+        } else {
+            buttonContainer.style.right = "90px"; // Standard position for desktop
+        }
 
         // Make buttons visible with a smooth transition once positioned
         buttonContainer.style.opacity = "0.85"; // Ensure consistent opacity during zoom
@@ -1189,7 +1200,13 @@ function addControlsToChartArea(canvas, chart) {
     // Set an initial position - will be corrected by updateButtonPositions
     buttonContainer.style.position = "absolute";
     buttonContainer.style.bottom = "30px"; // Just a placeholder, updateButtonPositions will set the proper value
-    buttonContainer.style.right = "90px";
+    
+    // Set the initial right position based on device type
+    if (isMobile()) {
+        buttonContainer.style.right = "20px"; // Position closer to the right on mobile
+    } else {
+        buttonContainer.style.right = "90px"; // Standard position for desktop
+    }
     // Don't set display:flex or opacity yet - wait until updateButtonPositions is called
 
     updateButtonPositions(chart);
