@@ -781,8 +781,8 @@ function formatDataForChartJS(chartData) {
                                 // Format x value with no decimal places
                                 const xValue = parseFloat(dataPoint.x).toFixed(0);
 
-                                // Main header for tooltip - show point margin
-                                let tooltipHeader = `Points Behind: ${xValue}`;
+                                // Main header for tooltip - use the x_label from the chart data
+                                let tooltipHeader = `${chartData.x_label}: ${xValue}`;
 
                                 // Check if we have pre-calculated data for this point margin
                                 if (pointMarginData[xValue]) {
@@ -791,7 +791,7 @@ function formatDataForChartJS(chartData) {
                                 }
 
                                 // Fallback if point margin data not found
-                                return `Points Behind: ${xValue}`;
+                                return tooltipHeader;
                             }
 
                             // Find the corresponding line index
