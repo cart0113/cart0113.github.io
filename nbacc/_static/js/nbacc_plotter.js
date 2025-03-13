@@ -255,7 +255,7 @@ function formatDataForChartJS(chartData) {
         if (isMobile() && !context.chart.isFullscreen) {
             return;
         }
-        
+
         // Tooltip Element
         let tooltipEl = document.getElementById("chartjs-tooltip");
 
@@ -264,50 +264,54 @@ function formatDataForChartJS(chartData) {
             tooltipEl = document.createElement("div");
             tooltipEl.id = "chartjs-tooltip";
             tooltipEl.innerHTML = "<table></table>";
-            tooltipEl.setAttribute("data-sticky", "false");
+            // On mobile, make tooltips sticky by default
+            tooltipEl.setAttribute("data-sticky", isMobile() ? "true" : "false");
             document.body.appendChild(tooltipEl);
 
-            // Add mouse enter/leave events for the tooltip itself
-            tooltipEl.addEventListener("mouseenter", () => {
-                // Only make sticky briefly to allow interaction with links
-                tooltipEl.setAttribute("data-sticky", "true");
+            // Desktop behavior - add mouse enter/leave events
+            if (!isMobile()) {
+                // Add mouse enter/leave events for the tooltip itself
+                tooltipEl.addEventListener("mouseenter", () => {
+                    // Only make sticky briefly to allow interaction with links
+                    tooltipEl.setAttribute("data-sticky", "true");
 
-                // Set a timeout to automatically remove stickiness after 4 seconds
-                if (tooltipEl.stickyTimeout) {
-                    clearTimeout(tooltipEl.stickyTimeout);
-                }
-                tooltipEl.stickyTimeout = setTimeout(() => {
-                    tooltipEl.setAttribute("data-sticky", "false");
-                    tooltipEl.style.opacity = 0;
-                }, 4000);
-            });
-
-            tooltipEl.addEventListener("mouseleave", (event) => {
-                // Always remove stickiness when mouse leaves tooltip
-                tooltipEl.setAttribute("data-sticky", "false");
-
-                // Clear any pending timeout
-                if (tooltipEl.stickyTimeout) {
-                    clearTimeout(tooltipEl.stickyTimeout);
-                }
-
-                // Hide tooltip immediately when mouse leaves
-                tooltipEl.style.opacity = 0;
-
-                // Reset tooltip content when it hides to prevent link behaviors from lingering
-                setTimeout(() => {
-                    if (tooltipEl.style.opacity === "0") {
-                        // Empty the tooltip content to prevent link behaviors from persisting
-                        const tableRoot = tooltipEl.querySelector("table");
-                        if (tableRoot) {
-                            tableRoot.innerHTML = "";
-                        }
-
-                        // Also reset any cursor changes
-                        document.body.style.cursor = "default";
+                    // Set a timeout to automatically remove stickiness after 4 seconds
+                    if (tooltipEl.stickyTimeout) {
+                        clearTimeout(tooltipEl.stickyTimeout);
                     }
-                }, 300); // Short delay to ensure tooltip is fully hidden
-            });
+                    tooltipEl.stickyTimeout = setTimeout(() => {
+                        tooltipEl.setAttribute("data-sticky", "false");
+                        tooltipEl.style.opacity = 0;
+                    }, 4000);
+                });
+
+                tooltipEl.addEventListener("mouseleave", (event) => {
+                    // Always remove stickiness when mouse leaves tooltip
+                    tooltipEl.setAttribute("data-sticky", "false");
+
+                    // Clear any pending timeout
+                    if (tooltipEl.stickyTimeout) {
+                        clearTimeout(tooltipEl.stickyTimeout);
+                    }
+
+                    // Hide tooltip immediately when mouse leaves
+                    tooltipEl.style.opacity = 0;
+
+                    // Reset tooltip content when it hides to prevent link behaviors from lingering
+                    setTimeout(() => {
+                        if (tooltipEl.style.opacity === "0") {
+                            // Empty the tooltip content to prevent link behaviors from persisting
+                            const tableRoot = tooltipEl.querySelector("table");
+                            if (tableRoot) {
+                                tableRoot.innerHTML = "";
+                            }
+
+                            // Also reset any cursor changes
+                            document.body.style.cursor = "default";
+                        }
+                    }, 300); // Short delay to ensure tooltip is fully hidden
+                });
+            }
         }
 
         // If tooltip model is inactive (mouse left chart element)
@@ -445,7 +449,7 @@ function formatDataForChartJS(chartData) {
                                     formattedDate = `${game.game_date} `;
                                 }
                             }
-                            
+
                             // For mobile, we need special handling to prevent "sticky" links
                             if (isMobile()) {
                                 innerHtml += `<tr><td style="padding:0px 5px; font-family:'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; letter-spacing: 0.1px; line-height: 1.1; font-size:${gameFontSize};">
@@ -489,7 +493,7 @@ function formatDataForChartJS(chartData) {
                                     formattedDate = `${game.game_date} `;
                                 }
                             }
-                            
+
                             // For mobile, use JavaScript to handle navigation to prevent "sticky" links
                             if (isMobile()) {
                                 innerHtml += `<tr><td style="padding:0px 5px; font-family:'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; letter-spacing: 0.1px; line-height: 1.1; font-size:${gameFontSize};">
@@ -530,6 +534,8 @@ function formatDataForChartJS(chartData) {
                 newCloseBtn.addEventListener("click", (e) => {
                     e.preventDefault();
                     e.stopPropagation();
+                    
+                    // Make sure clicking the close button works on all devices
                     tooltipEl.style.opacity = 0;
                     tooltipEl.setAttribute("data-sticky", "false");
 
@@ -822,14 +828,13 @@ function formatDataForChartJS(chartData) {
                                     : "0.00";
 
                             // Format win statistics with each item on a new line - consistent across all devices
-                            return `${chartData.x_label}: ${pointData.point_margin}<br/>Wins: ${
-                                pointData.win_count
-                            } out of ${
+                            return `${chartData.x_label}: ${
+                                pointData.point_margin
+                            }<br/>Wins: ${pointData.win_count} out of ${
                                 pointData.game_count
                             } Total Games<br/>Win %: ${winPercent}<br/>Occurs %: ${(
                                 pointData.point_margin_occurs_percent * 100
                             ).toFixed(2)}`;
-                            
                         },
                     },
                 },
@@ -1006,7 +1011,7 @@ function formatDataForChartJS(chartData) {
                 backgroundColor: "transparent",
                 borderWidth: isMobile() ? 4 : 5, // Thinner line on mobile
                 pointRadius: isMobile() ? 3 : 4, // Smaller points on mobile
-                pointHoverRadius: isMobile() ? 7 : 10, // Smaller hover radius on mobile
+                pointHoverRadius: isMobile() ? 8 : 10, // Smaller hover radius on mobile
                 pointStyle: "circle", // Round points
                 pointBackgroundColor: color,
                 pointBorderColor: color, // Same color as the point to remove white border
@@ -1142,36 +1147,55 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     `;
     document.head.appendChild(style);
-    
+
     // For mobile, add special handling to clear any lingering effects when returning to the page
     if (isMobile()) {
         // This will be triggered when returning from NBA.com via back button
-        window.addEventListener('pageshow', function(event) {
+        window.addEventListener("pageshow", function (event) {
             // Clear any visible tooltips
             const tooltipEl = document.getElementById("chartjs-tooltip");
             if (tooltipEl) {
                 tooltipEl.style.opacity = "0";
-                
+
                 // Empty the table contents
-                const table = tooltipEl.querySelector('table');
+                const table = tooltipEl.querySelector("table");
                 if (table) {
-                    table.innerHTML = '';
+                    table.innerHTML = "";
                 }
             }
         });
-        
-        // Also add a click handler to the document to clear tooltips when clicking anywhere
-        document.addEventListener('click', function(event) {
+
+        // Add a click handler to the document to clear tooltips only when clicking outside the tooltip
+        document.addEventListener("click", function (event) {
             // If click is outside tooltip and tooltip exists, hide it
             const tooltipEl = document.getElementById("chartjs-tooltip");
-            if (tooltipEl && !tooltipEl.contains(event.target)) {
-                tooltipEl.style.opacity = "0";
-                setTimeout(function() {
-                    const table = tooltipEl.querySelector('table');
-                    if (table) {
-                        table.innerHTML = '';
+            if (
+                tooltipEl &&
+                tooltipEl.style.opacity !== "0" &&
+                !tooltipEl.contains(event.target)
+            ) {
+                // Check that we're not clicking on a chart element (which would show a new tooltip)
+                const chartElements = document.querySelectorAll(
+                    "canvas.chartjs-render-monitor"
+                );
+                let clickedOnChart = false;
+
+                chartElements.forEach((canvas) => {
+                    if (canvas.contains(event.target)) {
+                        clickedOnChart = true;
                     }
-                }, 300);
+                });
+
+                // Only hide if clicked outside both tooltip and chart
+                if (!clickedOnChart) {
+                    tooltipEl.style.opacity = "0";
+                    setTimeout(function () {
+                        const table = tooltipEl.querySelector("table");
+                        if (table) {
+                            table.innerHTML = "";
+                        }
+                    }, 300);
+                }
             }
         });
     }
@@ -1181,12 +1205,12 @@ document.addEventListener("DOMContentLoaded", function () {
 function updateButtonPositions(chart) {
     // First try to find the button container using the chart's canvas ID
     const chartId = chart.canvas.id.replace("-canvas", "");
-    
+
     // Need to handle both regular chart containers and fullscreen containers
     let buttonContainer = document.querySelector(
         `#${chartId} .chart-container .chart-buttons`
     );
-    
+
     // If not found, check if we're in fullscreen mode
     if (!buttonContainer) {
         // Try to find button container in the lightbox
@@ -1201,26 +1225,26 @@ function updateButtonPositions(chart) {
 
         // Most important: position relative to the actual chart area
         const chartArea = chart.chartArea;
-        
+
         // Calculate the button dimensions - force a reflow if needed
         let buttonContainerWidth = buttonContainer.offsetWidth;
         let buttonContainerHeight = buttonContainer.offsetHeight;
-        
+
         // If dimensions are 0, make the container visible temporarily to measure
         const wasHidden = buttonContainer.style.opacity === "0";
         if (!buttonContainerWidth || !buttonContainerHeight) {
             const originalOpacity = buttonContainer.style.opacity;
             buttonContainer.style.opacity = "0.01"; // Barely visible for measurement
             buttonContainer.style.visibility = "visible";
-            
+
             // Force reflow and remeasure
             setTimeout(() => {
                 buttonContainerWidth = buttonContainer.offsetWidth || 120;
                 buttonContainerHeight = buttonContainer.offsetHeight || 40;
-                
+
                 // Position after getting correct dimensions
                 positionButtons();
-                
+
                 // Reveal buttons after they are positioned correctly
                 setTimeout(() => {
                     buttonContainer.style.opacity = "0.9";
@@ -1234,36 +1258,47 @@ function updateButtonPositions(chart) {
                 buttonContainer.style.opacity = "0.9";
             }, 10);
         }
-        
+
         // Helper function to position the buttons now that we have dimensions
         function positionButtons() {
             // Adjust margins based on if we're in fullscreen mode
-            const isFullscreen = chart.isFullscreen || 
-                buttonContainer.closest('.nba-fullscreen-lightbox') !== null;
-                
+            const isFullscreen =
+                chart.isFullscreen ||
+                buttonContainer.closest(".nba-fullscreen-lightbox") !== null;
+
             // Adjust margins based on display mode and device
-            const marginRight = isFullscreen ? (isMobile() ? 20 : 30) : (isMobile() ? 10 : 20);
+            const marginRight = isFullscreen
+                ? isMobile()
+                    ? 20
+                    : 30
+                : isMobile()
+                ? 10
+                : 20;
             const marginBottom = isFullscreen ? 20 : 10;
-            
+
             // Always position the buttons inside the chart area, regardless of zoom/pan level
             buttonContainer.style.position = "absolute";
-            
+
             // Position from the right edge of the chart area
-            buttonContainer.style.left = `${chartArea.right - buttonContainerWidth - marginRight}px`;
-            
+            buttonContainer.style.left = `${
+                chartArea.right - buttonContainerWidth - marginRight
+            }px`;
+
             // Position from the bottom edge of the chart area
-            buttonContainer.style.top = `${chartArea.bottom - buttonContainerHeight - marginBottom}px`;
-            
+            buttonContainer.style.top = `${
+                chartArea.bottom - buttonContainerHeight - marginBottom
+            }px`;
+
             // Remove bottom and right positioning which could conflict
             buttonContainer.style.bottom = "auto";
             buttonContainer.style.right = "auto";
 
             // Ensure buttons remain above the chart
             buttonContainer.style.zIndex = "10";
-            
+
             // Add subtle transition for smoother repositioning
             buttonContainer.style.transition = "all 0.15s ease-out";
-            
+
             // Add drop shadow to make buttons more visible on various backgrounds
             buttonContainer.style.filter = "drop-shadow(0px 2px 3px rgba(0,0,0,0.3))";
         }
@@ -1356,7 +1391,7 @@ function addControlsToChartArea(canvas, chart) {
             // This will only allow our custom chart zooming to work
             document.body.style.touchAction = "none";
             chartContainer.style.touchAction = "none";
-            
+
             // For mobile in fullscreen mode, enable zooming
             if (chart.options.plugins && chart.options.plugins.zoom) {
                 chart.options.plugins.zoom.zoom.drag.enabled = true;
@@ -1394,7 +1429,7 @@ function addControlsToChartArea(canvas, chart) {
                 // Also enable win_count numbers on scatter plot for mobile in fullscreen
                 // Set a flag on the chart that we can check in the winCountPlugin and tooltip handler
                 chart.isFullscreen = true;
-                
+
                 // Clear any existing tooltip to start fresh
                 const tooltipEl = document.getElementById("chartjs-tooltip");
                 if (tooltipEl) {
@@ -1421,13 +1456,13 @@ function addControlsToChartArea(canvas, chart) {
         fullScreenButton.setAttribute("data-tooltip", "Exit Full Screen");
         fullScreenButton.setAttribute("data-fullscreen", "true");
         fullScreenButton.onclick = exitFullScreen;
-        
+
         // Hide the buttons before repositioning
         const buttonContainer = parentChartDiv.querySelector(".chart-buttons");
         if (buttonContainer) {
             buttonContainer.style.opacity = "0";
         }
-        
+
         // Update button positions with a shorter delay
         setTimeout(() => {
             updateButtonPositions(chart);
@@ -1439,7 +1474,7 @@ function addControlsToChartArea(canvas, chart) {
 
         // Re-enable page scrolling
         document.body.style.overflow = "";
-        
+
         // Always reset zoom before exiting fullscreen (for both mobile and desktop)
         chart.resetZoom();
 
@@ -1448,7 +1483,7 @@ function addControlsToChartArea(canvas, chart) {
             document.body.style.touchAction = "";
             const chartContainer = chart.canvas.parentElement;
             chartContainer.style.touchAction = "";
-            
+
             // Disable zooming on mobile when exiting fullscreen
             chart.options.plugins.zoom.zoom.drag.enabled = false;
             chart.options.plugins.zoom.zoom.pinch.enabled = false;
@@ -1466,7 +1501,7 @@ function addControlsToChartArea(canvas, chart) {
 
             // Remove the fullscreen flag to disable win count numbers and tooltips
             chart.isFullscreen = false;
-            
+
             // Hide any visible tooltips
             const tooltipEl = document.getElementById("chartjs-tooltip");
             if (tooltipEl) {
@@ -1500,13 +1535,13 @@ function addControlsToChartArea(canvas, chart) {
 
         // Resize chart to fit original container
         chart.resize();
-        
+
         // Hide the buttons before repositioning
         const buttonContainer = chart.parentChartDiv.querySelector(".chart-buttons");
         if (buttonContainer) {
             buttonContainer.style.opacity = "0";
         }
-        
+
         // Update button positions with a shorter delay
         setTimeout(() => {
             updateButtonPositions(chart);
@@ -1574,10 +1609,10 @@ function addControlsToChartArea(canvas, chart) {
     buttonContainer.style.alignItems = "center"; // Vertically center buttons
     buttonContainer.style.filter = "drop-shadow(0px 2px 3px rgba(0,0,0,0.3))"; // Add shadow for visibility
     buttonContainer.style.opacity = "0"; // Start invisible and fade in with updateButtonPositions
-    
+
     // Prevent text selection on buttons
     buttonContainer.style.userSelect = "none";
-    
+
     // Wait for the chart to be fully rendered before positioning
     setTimeout(() => {
         updateButtonPositions(chart);
