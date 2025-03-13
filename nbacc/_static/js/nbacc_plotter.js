@@ -60,7 +60,7 @@ function getColorWheel(opacity) {
     return colorWheel.map((color) => color.replace(/0\.5\)/, `${opacity})`));
 }
 
-// Custom plugin to add a grey background box around the plot area
+// Custom plugin to add a subtle background box around the plot area
 const plotBackgroundPlugin = {
     id: "plotBackgroundPlugin",
     beforeDraw: (chart) => {
@@ -68,12 +68,12 @@ const plotBackgroundPlugin = {
         if (!chartArea) {
             return;
         }
-        // Draw a grey background rectangle
+        // Draw a lighter background rectangle
         ctx.save();
-        ctx.fillStyle = "rgba(166, 166, 166, 0.2)";
+        ctx.fillStyle = "rgba(126, 126, 126, 0.1)"; // Reduced opacity from 0.2 to 0.1
         ctx.fillRect(chartArea.left, chartArea.top, chartArea.width, chartArea.height);
 
-        // Add border around the rectangle
+        // Add border around the rectangle - also lighter
         ctx.lineWidth = 2;
         ctx.strokeStyle = "rgba(187, 187, 187, 0.68)";
         ctx.strokeRect(
@@ -328,14 +328,18 @@ function formatDataForChartJS(chartData) {
             let innerHtml = "<thead>";
 
             // Add close button to header
+            const titleFontSize = isMobile() ? "11px" : "15px"; // 25% smaller on mobile
+            const closeButtonSize = isMobile() ? "16px" : "20px"; // Smaller close button on mobile
+            const closeButtonFontSize = isMobile() ? "11px" : "14px"; // Smaller X icon on mobile
+            
             innerHtml += `
                 <tr>
-                    <th style="color:#f2f2f2; font-weight:bold; padding:5px 45px 5px 5px; position:relative; font-size:15px;">
+                    <th style="color:#f2f2f2; font-weight:bold; padding:5px 45px 5px 5px; position:relative; font-size:${titleFontSize}; line-height:1.3;">
                         ${titleLines[0] || ""}
                         <span class="tooltip-close" style="position:absolute; right:8px; top:50%; 
-                            transform: translateY(-50%); cursor:pointer; width:20px; height:20px; text-align:center; 
-                            line-height:20px; color:#f2f2f2; background:rgba(255,255,255,0.25); 
-                            border-radius:50%; font-size:14px;">×</span>
+                            transform: translateY(-50%); cursor:pointer; width:${closeButtonSize}; height:${closeButtonSize}; text-align:center; 
+                            line-height:${closeButtonSize}; color:#f2f2f2; background:rgba(255,255,255,0.25); 
+                            border-radius:50%; font-size:${closeButtonFontSize};">×</span>
                     </th>
                 </tr>`;
             innerHtml += "</thead><tbody>";
@@ -370,12 +374,15 @@ function formatDataForChartJS(chartData) {
                             // Get the color for this line (more opaque for the box)
                             const color = colors[i % colors.length];
 
-                            // Create two versions of the text - with and without R² value - all text in bold and larger
-                            const textWithoutR = `<span style="display:inline-block; width:14px; height:14px; background-color:${color}; margin-right:8px; border-radius:2px;"></span>
-                            <span style="font-weight:bold; font-size:14px;">${cleanLegend}:</span> <span style="font-weight:bold; font-size:14px;">Win %= ${data.winPercent}</span>`;
+                            // Create two versions of the text - with and without R² value - with responsive font sizes
+                            const legendFontSize = isMobile() ? "10.5px" : "14px"; // 25% smaller on mobile
+                            const colorBoxSize = isMobile() ? "10px" : "14px"; // 25% smaller color box on mobile
+                            
+                            const textWithoutR = `<span style="display:inline-block; width:${colorBoxSize}; height:${colorBoxSize}; background-color:${color}; margin-right:8px; border-radius:2px;"></span>
+                            <span style="font-weight:bold; font-size:${legendFontSize};">${cleanLegend}:</span> <span style="font-weight:bold; font-size:${legendFontSize};">Win %= ${data.winPercent}</span>`;
 
-                            const fullText = `<span style="display:inline-block; width:14px; height:14px; background-color:${color}; margin-right:8px; border-radius:2px;"></span>
-                            <span style="font-weight:bold; font-size:14px;">${cleanLegend}:</span> <span style="font-weight:bold; font-size:14px;">Win %= ${data.winPercent} | R² Value= ${data.rSquared}</span>`;
+                            const fullText = `<span style="display:inline-block; width:${colorBoxSize}; height:${colorBoxSize}; background-color:${color}; margin-right:8px; border-radius:2px;"></span>
+                            <span style="font-weight:bold; font-size:${legendFontSize};">${cleanLegend}:</span> <span style="font-weight:bold; font-size:${legendFontSize};">Win %= ${data.winPercent} | R² Value= ${data.rSquared}</span>`;
 
                             // Display according to showRSquared toggle
                             innerHtml += `<tr><td 
@@ -408,11 +415,13 @@ function formatDataForChartJS(chartData) {
                 if (pointData) {
                     // Win games section
                     if (pointData.win_count > 0) {
+                        const headerFontSize = isMobile() ? "10px" : "13px"; // 25% smaller on mobile
                         innerHtml +=
-                            '<tr><td style="padding:3px 5px 1px;"><b>Win examples:</b></td></tr>';
+                            `<tr><td style="padding:3px 5px 1px;"><b style="font-size:${headerFontSize};">Win examples:</b></td></tr>`;
 
                         // Show up to 9 win examples (increased from 8)
                         const winExamples = pointData.win_games.slice(0, 9);
+                        const gameFontSize = isMobile() ? "9px" : "12px"; // 25% smaller on mobile
                         winExamples.forEach((game) => {
                             const gameUrl = `http://www.nba.com/game/${game.game_id}`;
                             // Format the date to be more readable (YYYY-MM-DD to MM/DD/YYYY)
@@ -425,14 +434,15 @@ function formatDataForChartJS(chartData) {
                                     formattedDate = `${game.game_date} `;
                                 }
                             }
-                            innerHtml += `<tr><td style="padding:0px 5px; font-family:'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; letter-spacing: 0.1px; line-height: 1.1; font-size:12px;">
+                            innerHtml += `<tr><td style="padding:0px 5px; font-family:'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; letter-spacing: 0.1px; line-height: 1.1; font-size:${gameFontSize};">
                                 <a href="${gameUrl}" target="_blank" rel="noopener noreferrer" style="color: #78c6ff; text-decoration: underline; padding: 1px 0;">
                                 ${formattedDate}${game.game_summary}</a></td></tr>`;
                         });
 
                         // Update the "more" text to account for 9 examples instead of 8
                         if (pointData.win_games.length > 9) {
-                            innerHtml += `<tr><td style="padding:0px 5px 3px; font-size: 0.85em;">...and ${
+                            const moreFontSize = isMobile() ? "8px" : "10px"; // 25% smaller on mobile
+                            innerHtml += `<tr><td style="padding:0px 5px 3px; font-size: ${moreFontSize};">...and ${
                                 pointData.win_count - 9
                             } more</td></tr>`;
                         }
@@ -440,11 +450,14 @@ function formatDataForChartJS(chartData) {
 
                     // Loss games section - keep at 4 examples as requested
                     if (pointData.loss_count > 0) {
+                        const headerFontSize = isMobile() ? "10px" : "13px"; // 25% smaller on mobile
                         innerHtml +=
-                            '<tr><td style="padding:3px 5px 1px;"><b>Loss examples:</b></td></tr>';
+                            `<tr><td style="padding:3px 5px 1px;"><b style="font-size:${headerFontSize};">Loss examples:</b></td></tr>`;
 
                         // Still showing 4 loss examples
                         const lossExamples = pointData.loss_games.slice(0, 4);
+                        // Reuse the same gameFontSize variable from win examples
+                        const gameFontSize = isMobile() ? "9px" : "12px"; // 25% smaller on mobile
                         lossExamples.forEach((game) => {
                             const gameUrl = `http://www.nba.com/game/${game.game_id}`;
                             // Format the date to be more readable (YYYY-MM-DD to MM/DD/YYYY)
@@ -457,14 +470,15 @@ function formatDataForChartJS(chartData) {
                                     formattedDate = `${game.game_date} `;
                                 }
                             }
-                            innerHtml += `<tr><td style="padding:0px 5px; font-family:'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; letter-spacing: 0.1px; line-height: 1.1; font-size:12px;">
+                            innerHtml += `<tr><td style="padding:0px 5px; font-family:'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; letter-spacing: 0.1px; line-height: 1.1; font-size:${gameFontSize};">
                                 <a href="${gameUrl}" target="_blank" rel="noopener noreferrer" style="color: #78c6ff; text-decoration: underline; padding: 1px 0;">
                                 ${formattedDate}${game.game_summary}</a></td></tr>`;
                         });
 
                         // Update the "more" text - make it more compact
                         if (pointData.loss_games.length > 4) {
-                            innerHtml += `<tr><td style="padding:0px 5px 2px; font-size: 0.85em;">...and ${
+                            const moreFontSize = isMobile() ? "8px" : "10px"; // 25% smaller on mobile
+                            innerHtml += `<tr><td style="padding:0px 5px 2px; font-size: ${moreFontSize};">...and ${
                                 pointData.loss_count - 4
                             } more</td></tr>`;
                         }
@@ -540,26 +554,98 @@ function formatDataForChartJS(chartData) {
         // Position and style the tooltip
         const position = context.chart.canvas.getBoundingClientRect();
         const bodyFont = tooltipModel.options.bodyFont;
+        const isMobileDevice = isMobile();
 
+        // Calculate initial position - place tooltip with top left corner at the data point
+        // This ensures the tooltip appears directly at the data point by default
+        let left = position.left + window.pageXOffset + tooltipModel.caretX;
+        let top = position.top + window.pageYOffset + tooltipModel.caretY;
+        
+        // Store original position for debugging
+        const originalTop = top;
+        
+        // Set tooltip properties first so we can measure its size
         tooltipEl.style.opacity = 1;
         tooltipEl.style.position = "absolute";
-        tooltipEl.style.left =
-            position.left + window.pageXOffset + tooltipModel.caretX + "px";
-        tooltipEl.style.top =
-            position.top + window.pageYOffset + tooltipModel.caretY + "px";
+        tooltipEl.style.left = left + "px";
+        tooltipEl.style.top = top + "px";
+        
+        // Force a reflow so we can get the tooltip dimensions
+        const tooltipWidth = tooltipEl.offsetWidth;
+        const tooltipHeight = tooltipEl.offsetHeight;
+        
+        // Get viewport dimensions
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        // Set padding from screen edges
+        const screenPadding = 5;
+        
+        // Horizontal adjustment - simplified and more precise
+        // Check if tooltip would extend beyond right edge of screen
+        if (left + tooltipWidth > viewportWidth - screenPadding) {
+            // Move left only enough to make the tooltip fully visible within the viewport
+            // This precise calculation ensures we move exactly the amount needed
+            left = Math.max(screenPadding, viewportWidth - tooltipWidth - screenPadding);
+        } 
+        // Check if tooltip would extend beyond left edge of screen
+        else if (left < screenPadding) {
+            // If tooltip would go off left edge, place it at the screen padding
+            left = screenPadding;
+        }
+        
+        // Extra check for very narrow screens where the tooltip is wider than the viewport
+        if (tooltipWidth > viewportWidth - (2 * screenPadding)) {
+            // In this extreme case, center the tooltip
+            left = Math.max(screenPadding, (viewportWidth - tooltipWidth) / 2);
+        }
+        
+        // Get the screen's total available vertical space, accounting for scrolling
+        const totalScreenHeight = window.innerHeight;
+        
+        // Vertical adjustment - ONLY if the tooltip would actually extend beyond the bottom of the screen
+        const tooltipBottom = top + tooltipHeight;
+        const screenBottom = window.pageYOffset + totalScreenHeight - screenPadding;
+        
+        if (tooltipBottom > screenBottom) {
+            // Only move up the exact amount needed to fit on screen
+            const amountToMoveUp = tooltipBottom - screenBottom;
+            top -= amountToMoveUp;
+        } 
+        // Also check if it would go above the top of the screen
+        else if (top < window.pageYOffset + screenPadding) {
+            top = window.pageYOffset + screenPadding;
+        }
+        
+        // Debug logging can be uncommented for troubleshooting if needed
+        /*
+        console.log('Tooltip Positioning:', {
+            tooltipHeight,
+            originalY: originalTop,
+            finalY: top,
+            viewportHeight: totalScreenHeight,
+            scrollY: window.pageYOffset,
+            wouldOverflow: tooltipBottom > screenBottom,
+            amountMoved: originalTop - top
+        });
+        */
+        
+        // Apply the adjusted position
+        tooltipEl.style.left = left + "px";
+        tooltipEl.style.top = top + "px";
         tooltipEl.style.font =
             "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-        tooltipEl.style.fontSize = "12px"; // Smaller base font size
-        tooltipEl.style.padding = "10px"; // Slightly less padding
+        tooltipEl.style.fontSize = isMobileDevice ? "9px" : "12px"; // 25% smaller on mobile
+        tooltipEl.style.padding = isMobileDevice ? "8px" : "10px"; // Less padding on mobile
         tooltipEl.style.pointerEvents = "auto";
         tooltipEl.style.backgroundColor = "rgba(29, 53, 87, 0.95)"; // Dark to medium blue
         tooltipEl.style.color = "#f2f2f2"; // Very light gray
         tooltipEl.style.borderRadius = "10px"; // More rounded corners
-        tooltipEl.style.maxWidth = "550px";
-        tooltipEl.style.minWidth = "350px";
+        tooltipEl.style.maxWidth = isMobileDevice ? "340px" : "550px"; // Wide enough for game links on mobile
+        tooltipEl.style.minWidth = isMobileDevice ? "280px" : "350px"; // Increased min width on mobile to prevent wrapping
         tooltipEl.style.zIndex = 20000; // Ensure highest z-index
         tooltipEl.style.boxShadow = "0px 3px 15px rgba(0,0,0,0.3)";
-        tooltipEl.style.borderWidth = "6px";
+        tooltipEl.style.borderWidth = isMobileDevice ? "4px" : "6px"; // Thinner border on mobile
         tooltipEl.style.borderStyle = "solid";
         tooltipEl.style.borderColor = borderColor; // Use the dataset color
     };
@@ -667,13 +753,25 @@ function formatDataForChartJS(chartData) {
                                     : "0.00";
 
                             // Format win statistics with new header format
-                            return `${pointData.point_margin}: Wins ${
-                                pointData.win_count
-                            }/${
-                                pointData.total_count
-                            } | Win %= ${winPercent} | Deficit %= ${(
-                                pointData.point_margin_percent * 100
-                            ).toFixed(2)}`;
+                            // On mobile, format with each stat on its own line
+                            if (isMobile()) {
+                                return `${pointData.point_margin}<br/>Wins: ${
+                                    pointData.win_count
+                                }/${
+                                    pointData.total_count
+                                }<br/>Win %= ${winPercent}<br/>Deficit %= ${(
+                                    pointData.point_margin_percent * 100
+                                ).toFixed(2)}`;
+                            } else {
+                                // Desktop format remains the same
+                                return `${pointData.point_margin}: Wins ${
+                                    pointData.win_count
+                                }/${
+                                    pointData.total_count
+                                } | Win %= ${winPercent} | Deficit %= ${(
+                                    pointData.point_margin_percent * 100
+                                ).toFixed(2)}`;
+                            }
                         },
                     },
                 },
