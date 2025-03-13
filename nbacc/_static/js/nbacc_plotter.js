@@ -173,9 +173,9 @@ function formatDataForChartJS(chartData) {
     const winCountPlugin = {
         id: "winCountPlugin",
         afterDatasetsDraw: (chart) => {
-            // Skip drawing win counts on mobile devices
-            if (isMobile()) return;
-            
+            // Skip drawing win counts on mobile devices unless in fullscreen mode
+            if (isMobile() && !chart.isFullscreen) return;
+
             const ctx = chart.ctx;
 
             chart.data.datasets.forEach((dataset, datasetIndex) => {
@@ -217,7 +217,14 @@ function formatDataForChartJS(chartData) {
                         // Draw the win_count as white text - larger and very bold
                         ctx.save();
                         ctx.fillStyle = "white";
-                        ctx.font = "900 11px Arial"; // Increased weight to 900 (extra bold) and size to 15px
+
+                        // Use smaller font size on mobile in fullscreen mode
+                        if (isMobile() && chart.isFullscreen) {
+                            ctx.font = "900 10px Arial"; // 1px smaller on mobile in fullscreen
+                        } else {
+                            ctx.font = "900 11px Arial"; // Standard size for desktop
+                        }
+
                         ctx.textAlign = "center";
                         ctx.textBaseline = "middle";
 
@@ -331,7 +338,7 @@ function formatDataForChartJS(chartData) {
             const titleFontSize = isMobile() ? "11px" : "15px"; // 25% smaller on mobile
             const closeButtonSize = isMobile() ? "16px" : "20px"; // Smaller close button on mobile
             const closeButtonFontSize = isMobile() ? "11px" : "14px"; // Smaller X icon on mobile
-            
+
             innerHtml += `
                 <tr>
                     <th style="color:#f2f2f2; font-weight:bold; padding:5px 45px 5px 5px; position:relative; font-size:${titleFontSize}; line-height:1.3;">
@@ -377,7 +384,7 @@ function formatDataForChartJS(chartData) {
                             // Create two versions of the text - with and without R² value - with responsive font sizes
                             const legendFontSize = isMobile() ? "10.5px" : "14px"; // 25% smaller on mobile
                             const colorBoxSize = isMobile() ? "10px" : "14px"; // 25% smaller color box on mobile
-                            
+
                             const textWithoutR = `<span style="display:inline-block; width:${colorBoxSize}; height:${colorBoxSize}; background-color:${color}; margin-right:8px; border-radius:2px;"></span>
                             <span style="font-weight:bold; font-size:${legendFontSize};">${cleanLegend}:</span> <span style="font-weight:bold; font-size:${legendFontSize};">Win %= ${data.winPercent}</span>`;
 
@@ -416,8 +423,7 @@ function formatDataForChartJS(chartData) {
                     // Win games section
                     if (pointData.win_count > 0) {
                         const headerFontSize = isMobile() ? "10px" : "13px"; // 25% smaller on mobile
-                        innerHtml +=
-                            `<tr><td style="padding:3px 5px 1px;"><b style="font-size:${headerFontSize};">Win examples:</b></td></tr>`;
+                        innerHtml += `<tr><td style="padding:3px 5px 1px;"><b style="font-size:${headerFontSize};">Win examples:</b></td></tr>`;
 
                         // Show up to 9 win examples (increased from 8)
                         const winExamples = pointData.win_games.slice(0, 9);
@@ -451,8 +457,7 @@ function formatDataForChartJS(chartData) {
                     // Loss games section - keep at 4 examples as requested
                     if (pointData.loss_count > 0) {
                         const headerFontSize = isMobile() ? "10px" : "13px"; // 25% smaller on mobile
-                        innerHtml +=
-                            `<tr><td style="padding:3px 5px 1px;"><b style="font-size:${headerFontSize};">Loss examples:</b></td></tr>`;
+                        innerHtml += `<tr><td style="padding:3px 5px 1px;"><b style="font-size:${headerFontSize};">Loss examples:</b></td></tr>`;
 
                         // Still showing 4 loss examples
                         const lossExamples = pointData.loss_games.slice(0, 4);
@@ -560,35 +565,41 @@ function formatDataForChartJS(chartData) {
         // This ensures the tooltip appears directly at the data point by default
         let left = position.left + window.pageXOffset + tooltipModel.caretX;
         let top = position.top + window.pageYOffset + tooltipModel.caretY;
-        
+
         // Store original position for debugging
         const originalTop = top;
-        
+
         // Set tooltip properties first so we can measure its size
         tooltipEl.style.opacity = 1;
         tooltipEl.style.position = "absolute";
         tooltipEl.style.left = left + "px";
         tooltipEl.style.top = top + "px";
-        
+
         // Force a reflow so we can get the tooltip dimensions
         const tooltipWidth = tooltipEl.offsetWidth;
         const tooltipHeight = tooltipEl.offsetHeight;
-        
+
         // Get viewport dimensions - handle different browser implementations
         // Some Android browsers may handle viewport measurements differently
-        const viewportWidth = Math.min(window.innerWidth, document.documentElement.clientWidth);
-        const viewportHeight = Math.min(window.innerHeight, document.documentElement.clientHeight);
-        
+        const viewportWidth = Math.min(
+            window.innerWidth,
+            document.documentElement.clientWidth
+        );
+        const viewportHeight = Math.min(
+            window.innerHeight,
+            document.documentElement.clientHeight
+        );
+
         // Use larger padding on Android for safety
         const isAndroid = /Android/i.test(navigator.userAgent);
         const screenPadding = isAndroid ? 15 : 5;
-        
+
         // Special handling for Android - be more aggressive with horizontal positioning
         if (isAndroid) {
             // For Android devices, ensure the tooltip fits within the visible area with more margin
             // This accounts for potential inaccuracies in viewport measurement on some Android browsers
-            const safeWidth = viewportWidth - (2 * screenPadding);
-            
+            const safeWidth = viewportWidth - 2 * screenPadding;
+
             if (tooltipWidth >= safeWidth) {
                 // If tooltip is nearly as wide as the viewport, center it
                 left = Math.max(screenPadding, (viewportWidth - tooltipWidth) / 2);
@@ -597,9 +608,12 @@ function formatDataForChartJS(chartData) {
                 const rightEdge = left + tooltipWidth;
                 if (rightEdge > viewportWidth - screenPadding) {
                     // Shift further left on Android to ensure visibility
-                    left = Math.max(screenPadding, viewportWidth - tooltipWidth - screenPadding * 2);
+                    left = Math.max(
+                        screenPadding,
+                        viewportWidth - tooltipWidth - screenPadding * 2
+                    );
                 }
-                
+
                 // Ensure not too far left
                 if (left < screenPadding) {
                     left = screenPadding;
@@ -611,42 +625,45 @@ function formatDataForChartJS(chartData) {
             if (left + tooltipWidth > viewportWidth - screenPadding) {
                 // Move left only enough to make the tooltip fully visible within the viewport
                 // This precise calculation ensures we move exactly the amount needed
-                left = Math.max(screenPadding, viewportWidth - tooltipWidth - screenPadding);
-            } 
+                left = Math.max(
+                    screenPadding,
+                    viewportWidth - tooltipWidth - screenPadding
+                );
+            }
             // Check if tooltip would extend beyond left edge of screen
             else if (left < screenPadding) {
                 // If tooltip would go off left edge, place it at the screen padding
                 left = screenPadding;
             }
-            
+
             // Extra check for very narrow screens where the tooltip is wider than the viewport
-            if (tooltipWidth > viewportWidth - (2 * screenPadding)) {
+            if (tooltipWidth > viewportWidth - 2 * screenPadding) {
                 // In this extreme case, center the tooltip
                 left = Math.max(screenPadding, (viewportWidth - tooltipWidth) / 2);
             }
         }
-        
+
         // Get the screen's total available vertical space, accounting for scrolling
         // Use the more reliable measurement we already set above
         const totalScreenHeight = viewportHeight;
-        
+
         // Additional adjustment for Android devices
         const androidAdjustment = isAndroid ? 30 : 0; // Extra space for Android
-        
+
         // Vertical adjustment - ONLY if the tooltip would actually extend beyond the bottom of the screen
         const tooltipBottom = top + tooltipHeight + androidAdjustment;
         const screenBottom = window.pageYOffset + totalScreenHeight - screenPadding;
-        
+
         if (tooltipBottom > screenBottom) {
             // Only move up the exact amount needed to fit on screen
             const amountToMoveUp = tooltipBottom - screenBottom;
             top -= amountToMoveUp;
-        } 
+        }
         // Also check if it would go above the top of the screen
         else if (top < window.pageYOffset + screenPadding) {
             top = window.pageYOffset + screenPadding;
         }
-        
+
         // Debug logging can be uncommented for troubleshooting if needed
         /*
         console.log('Tooltip Positioning:', {
@@ -659,7 +676,7 @@ function formatDataForChartJS(chartData) {
             amountMoved: originalTop - top
         });
         */
-        
+
         // Apply the adjusted position
         tooltipEl.style.left = left + "px";
         tooltipEl.style.top = top + "px";
@@ -774,10 +791,9 @@ function formatDataForChartJS(chartData) {
 
                             // Calculate win percentage
                             const winPercent =
-                                pointData.total_count > 0
+                                pointData.game_count > 0
                                     ? (
-                                          (pointData.win_count /
-                                              pointData.total_count) *
+                                          (pointData.win_count / pointData.game_count) *
                                           100
                                       ).toFixed(2)
                                     : "0.00";
@@ -788,18 +804,18 @@ function formatDataForChartJS(chartData) {
                                 return `${pointData.point_margin}<br/>Wins: ${
                                     pointData.win_count
                                 }/${
-                                    pointData.total_count
-                                }<br/>Win %= ${winPercent}<br/>Deficit %= ${(
-                                    pointData.point_margin_percent * 100
+                                    pointData.game_count
+                                }<br/>Win %= ${winPercent}<br/>Occurs %= ${(
+                                    pointData.point_margin_occurs_percent * 100
                                 ).toFixed(2)}`;
                             } else {
                                 // Desktop format remains the same
                                 return `${pointData.point_margin}: Wins ${
                                     pointData.win_count
                                 }/${
-                                    pointData.total_count
-                                } | Win %= ${winPercent} | Deficit %= ${(
-                                    pointData.point_margin_percent * 100
+                                    pointData.game_count
+                                } | Win %= ${winPercent} | Occurs %= ${(
+                                    pointData.point_margin_occurs_percent * 100
                                 ).toFixed(2)}`;
                             }
                         },
@@ -1141,7 +1157,7 @@ function updateButtonPositions(chart) {
         // Set position relative to the actual chart (this is crucial)
         buttonContainer.style.position = "absolute";
         buttonContainer.style.bottom = `${bottomPosition}px`;
-        
+
         // Adjust the right position based on device type
         // On mobile, position is different but now we also have the full screen button
         if (isMobile()) {
@@ -1209,6 +1225,10 @@ function addControlsToChartArea(canvas, chart) {
 
     function fullscreen(event) {
         chartJsToolTipClearer(event);
+
+        // Disable page scrolling
+        document.body.style.overflow = "hidden";
+
         // Show lightbox
         lightboxInstance.show();
 
@@ -1235,9 +1255,51 @@ function addControlsToChartArea(canvas, chart) {
         if (isMobile()) {
             // Mobile needs different dimensions for best viewing
             chartContainer.style.width = "98%";
-            chartContainer.style.height = "85vh"; 
+            chartContainer.style.height = "85vh";
             chartContainer.style.maxWidth = "98%";
             chartContainer.style.maxHeight = "85vh";
+
+            // For mobile in fullscreen mode, enable zooming
+            if (chart.options.plugins && chart.options.plugins.zoom) {
+                chart.options.plugins.zoom.zoom.drag.enabled = true;
+                chart.options.plugins.zoom.zoom.pinch.enabled = true;
+                chart.options.plugins.zoom.pan.enabled = true;
+
+                // Add reset zoom button if it doesn't exist
+                const buttonContainer = parentChartDiv.querySelector(".chart-buttons");
+                if (
+                    buttonContainer &&
+                    !buttonContainer.querySelector(".reset-zoom-btn")
+                ) {
+                    const resetButton = document.createElement("button");
+                    resetButton.className = "chart-btn reset-zoom-btn";
+                    resetButton.title = "Reset Zoom";
+                    resetButton.setAttribute("aria-label", "Reset Zoom");
+                    resetButton.setAttribute("data-tooltip", "Reset Zoom");
+                    resetButton.innerHTML =
+                        '<i class="chart-icon zoom-reset-icon"></i>';
+                    resetButton.onclick = function (e) {
+                        chartJsToolTipClearer(e);
+                        chart.resetZoom();
+                        return false;
+                    };
+
+                    // Insert before the save button (which should be last)
+                    const saveButton = buttonContainer.querySelector(".save-png-btn");
+                    if (saveButton) {
+                        buttonContainer.insertBefore(resetButton, saveButton);
+                    } else {
+                        buttonContainer.appendChild(resetButton);
+                    }
+                }
+
+                // Also enable win_count numbers on scatter plot for mobile in fullscreen
+                // Set a flag on the chart that we can check in the winCountPlugin
+                chart.isFullscreen = true;
+
+                // We'll rerender the chart to apply all these changes
+                chart.update();
+            }
         } else {
             // Desktop dimensions
             chartContainer.style.width = "95%";
@@ -1250,8 +1312,7 @@ function addControlsToChartArea(canvas, chart) {
         chart.resize();
 
         // Update button state
-        fullScreenButton.innerHTML =
-            '<i class="chart-icon exit-full-screen-icon"></i>';
+        fullScreenButton.innerHTML = '<i class="chart-icon exit-full-screen-icon"></i>';
         fullScreenButton.setAttribute("data-tooltip", "Exit Full Screen");
         fullScreenButton.setAttribute("data-fullscreen", "true");
         fullScreenButton.onclick = exitFullScreen;
@@ -1259,6 +1320,33 @@ function addControlsToChartArea(canvas, chart) {
 
     function exitFullScreen(event) {
         chartJsToolTipClearer(event);
+
+        // Re-enable page scrolling
+        document.body.style.overflow = "";
+
+        // If on mobile, disable zooming and remove reset zoom button before restoring
+        if (isMobile() && chart.options.plugins && chart.options.plugins.zoom) {
+            // Disable zooming on mobile when exiting fullscreen
+            chart.options.plugins.zoom.zoom.drag.enabled = false;
+            chart.options.plugins.zoom.zoom.pinch.enabled = false;
+            chart.options.plugins.zoom.pan.enabled = false;
+
+            // Remove reset zoom button if it exists
+            const buttonContainer =
+                chart.parentChartDiv.querySelector(".chart-buttons");
+            if (buttonContainer) {
+                const resetButton = buttonContainer.querySelector(".reset-zoom-btn");
+                if (resetButton) {
+                    buttonContainer.removeChild(resetButton);
+                }
+            }
+
+            // Remove the fullscreen flag to disable win count numbers
+            chart.isFullscreen = false;
+
+            // We need to update the chart to reflect these changes
+            chart.update();
+        }
 
         // Close lightbox
         fullScreenButton.innerHTML = '<i class="chart-icon full-screen-icon"></i>';
@@ -1286,6 +1374,7 @@ function addControlsToChartArea(canvas, chart) {
     // Setup ESC key handler
     const handleEscKey = function (e) {
         if (e.key === "Escape" && lightboxInstance) {
+            // Make sure we call exitFullScreen to properly restore scrolling
             exitFullScreen(e);
             document.removeEventListener("keydown", handleEscKey);
         }
@@ -1337,7 +1426,7 @@ function addControlsToChartArea(canvas, chart) {
     // Set an initial position - will be corrected by updateButtonPositions
     buttonContainer.style.position = "absolute";
     buttonContainer.style.bottom = "30px"; // Just a placeholder, updateButtonPositions will set the proper value
-    
+
     // Set the initial right position based on device type
     if (isMobile()) {
         buttonContainer.style.right = "20px"; // Position for mobile with buttons
