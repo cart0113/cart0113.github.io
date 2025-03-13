@@ -30,6 +30,20 @@ const zoomOptions = {
             updateButtonPositions(chart);
         },
     },
+    pan: {
+        enabled: true,
+        mode: "xy",
+        threshold: 5, // Minimum distance required before pan is registered
+        modifierKey: "shift", // Hold shift key to pan (optional, prevents accidental panning)
+        onPan: function ({ chart }) {
+            // Update buttons during panning (not just after completion)
+            updateButtonPositions(chart);
+        },
+        onPanComplete: function ({ chart }) {
+            // Update button positions after panning completes
+            updateButtonPositions(chart);
+        },
+    },
 };
 
 const colorWheel = [
@@ -229,11 +243,11 @@ function formatDataForChartJS(chartData) {
     const externalTooltipHandler = (context) => {
         // Check if we're on a mobile device
         const isMobileDevice = isMobile();
-        
+
         // Get tooltip model data that we'll need in either case
         const tooltipModel = context.tooltip;
         const titleLines = tooltipModel.title || [];
-        
+
         // Check if tooltip should be hidden
         if (tooltipModel.opacity === 0) {
             // For mobile, potentially hide the lightbox
@@ -241,7 +255,7 @@ function formatDataForChartJS(chartData) {
                 // Don't close immediately to allow interaction with links
                 return; // We'll let the lightbox handle its own visibility
             }
-            
+
             // For desktop, handle the normal tooltip visibility
             const tooltipEl = document.getElementById("chartjs-tooltip");
             if (tooltipEl) {
@@ -257,12 +271,12 @@ function formatDataForChartJS(chartData) {
             }
             return;
         }
-        
+
         // Get the dataset information we'll need for either tooltip type
         const datasetIndex = tooltipModel.dataPoints[0].datasetIndex;
         const index = tooltipModel.dataPoints[0].dataIndex;
         const dataset = context.chart.data.datasets[datasetIndex];
-        
+
         // Generate HTML content for tooltip (will be used in both mobile and desktop)
         let innerHtml = "<thead>";
 
@@ -280,7 +294,7 @@ function formatDataForChartJS(chartData) {
         innerHtml += "</thead><tbody>";
 
         // Special handling for our custom content
-        
+
         // Check if this is a regression line dataset (they are even-indexed)
         if (datasetIndex % 2 === 0) {
             // This is a regression line - we need to show all regression data for this x-value
@@ -295,37 +309,32 @@ function formatDataForChartJS(chartData) {
                 const colors = getColorWheel(0.8);
 
                 // Loop through all lines and add their data
-                Object.entries(pointMarginData[xValue]).forEach(
-                    ([legend, data], i) => {
-                        // Remove the "(XXXX Total Games)" part from the legend text
-                        const cleanLegend = legend.replace(
-                            /\s+\(\d+\s+Total\s+Games\)$/,
-                            ""
-                        );
+                Object.entries(pointMarginData[xValue]).forEach(([legend, data], i) => {
+                    // Remove the "(XXXX Total Games)" part from the legend text
+                    const cleanLegend = legend.replace(
+                        /\s+\(\d+\s+Total\s+Games\)$/,
+                        ""
+                    );
 
-                        // Get the color for this line (more opaque for the box)
-                        const color = colors[i % colors.length];
+                    // Get the color for this line (more opaque for the box)
+                    const color = colors[i % colors.length];
 
-                        // Create two versions of the text - with and without R² value - all text in bold and larger
-                        const textWithoutR = `<span style="display:inline-block; width:14px; height:14px; background-color:${color}; margin-right:8px; border-radius:2px;"></span>
+                    // Create two versions of the text - with and without R² value - all text in bold and larger
+                    const textWithoutR = `<span style="display:inline-block; width:14px; height:14px; background-color:${color}; margin-right:8px; border-radius:2px;"></span>
                         <span style="font-weight:bold; font-size:14px;">${cleanLegend}:</span> <span style="font-weight:bold; font-size:14px;">Win %= ${data.winPercent}</span>`;
 
-                        const fullText = `<span style="display:inline-block; width:14px; height:14px; background-color:${color}; margin-right:8px; border-radius:2px;"></span>
+                    const fullText = `<span style="display:inline-block; width:14px; height:14px; background-color:${color}; margin-right:8px; border-radius:2px;"></span>
                         <span style="font-weight:bold; font-size:14px;">${cleanLegend}:</span> <span style="font-weight:bold; font-size:14px;">Win %= ${data.winPercent} | R² Value= ${data.rSquared}</span>`;
 
-                        // Display according to showRSquared toggle
-                        innerHtml += `<tr><td 
+                    // Display according to showRSquared toggle
+                    innerHtml += `<tr><td 
                         style="padding:3px 5px 3px 5px; font-family:'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.4;"
                         data-has-r-squared="true"
-                        data-text-without-r="${textWithoutR.replace(
-                            /"/g,
-                            "&quot;"
-                        )}" 
+                        data-text-without-r="${textWithoutR.replace(/"/g, "&quot;")}" 
                         data-full-text="${fullText.replace(/"/g, "&quot;")}">
                         ${showRSquared ? fullText : textWithoutR}
                     </td></tr>`;
-                    }
-                );
+                });
             }
         }
         // Show data points tooltip
@@ -409,7 +418,7 @@ function formatDataForChartJS(chartData) {
         }
 
         innerHtml += "</tbody>";
-        
+
         // Get the color of the hovered data point - used for styling
         let borderColor = "rgba(255, 255, 255, 0.6)"; // Default fallback color
 
@@ -440,33 +449,35 @@ function formatDataForChartJS(chartData) {
                 }
             }
         }
-        
+
         // For mobile devices, show tooltip in a lightbox
         if (isMobileDevice) {
             console.log("Mobile device detected - preparing lightbox");
-            
+
             // Get the mobile tooltip container and inner element
             const mobileContainer = document.getElementById("mobile-tooltip-container");
             if (!mobileContainer) {
                 console.error("Mobile tooltip container not found");
                 return;
             }
-            
-            const innerContainer = mobileContainer.querySelector(".mobile-tooltip-inner");
+
+            const innerContainer = mobileContainer.querySelector(
+                ".mobile-tooltip-inner"
+            );
             if (!innerContainer) {
                 console.error("Mobile tooltip inner container not found");
                 return;
             }
-            
+
             // Clear previous content
             innerContainer.innerHTML = "";
-            
+
             // Create a table element
             const tableEl = document.createElement("table");
             tableEl.className = "mobile-tooltip-table";
             tableEl.innerHTML = innerHtml;
             innerContainer.appendChild(tableEl);
-            
+
             // Add an explicit close button for iOS
             const explicitCloseBtn = document.createElement("button");
             explicitCloseBtn.className = "mobile-explicit-close";
@@ -479,14 +490,14 @@ function formatDataForChartJS(chartData) {
             explicitCloseBtn.style.borderRadius = "4px";
             explicitCloseBtn.style.fontSize = "16px";
             explicitCloseBtn.style.color = "#333";
-            explicitCloseBtn.onclick = function(e) {
+            explicitCloseBtn.onclick = function (e) {
                 e.preventDefault();
                 e.stopPropagation();
                 console.log("Explicit close button clicked");
                 mobileTooltipLightbox.close();
             };
             innerContainer.appendChild(explicitCloseBtn);
-            
+
             // Style the mobile tooltip container
             mobileContainer.style.backgroundColor = "rgba(29, 53, 87, 0.95)"; // Dark to medium blue
             mobileContainer.style.color = "#f2f2f2"; // Very light gray
@@ -499,12 +510,13 @@ function formatDataForChartJS(chartData) {
             mobileContainer.style.borderWidth = "6px";
             mobileContainer.style.borderStyle = "solid";
             mobileContainer.style.borderColor = borderColor; // Use the dataset color
-            mobileContainer.style.fontFamily = "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+            mobileContainer.style.fontFamily =
+                "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
             mobileContainer.style.fontSize = "16px"; // Larger for mobile
             mobileContainer.style.maxHeight = "80vh";
             mobileContainer.style.overflowY = "auto";
             mobileContainer.style.WebkitOverflowScrolling = "touch"; // Smooth scrolling on iOS
-            
+
             // Add click handler to close button in the header
             const closeBtn = mobileContainer.querySelector(".tooltip-close");
             if (closeBtn) {
@@ -514,10 +526,10 @@ function formatDataForChartJS(chartData) {
                 closeBtn.style.lineHeight = "30px";
                 closeBtn.style.fontSize = "20px";
                 closeBtn.style.background = "rgba(255,255,255,0.3)";
-                
+
                 // First remove any existing event listeners to avoid duplicates
                 closeBtn.replaceWith(closeBtn.cloneNode(true));
-                
+
                 // Get the newly cloned button
                 const newCloseBtn = mobileContainer.querySelector(".tooltip-close");
                 newCloseBtn.addEventListener("click", (e) => {
@@ -528,7 +540,7 @@ function formatDataForChartJS(chartData) {
                     return false;
                 });
             }
-            
+
             // Show the lightbox if not already visible
             if (!mobileTooltipLightbox.visible()) {
                 console.log("Showing mobile tooltip lightbox");
@@ -540,7 +552,7 @@ function formatDataForChartJS(chartData) {
             } else {
                 console.log("Lightbox already visible");
             }
-        } 
+        }
         // For desktop, use the regular hover tooltip
         else {
             // Tooltip Element
@@ -596,7 +608,7 @@ function formatDataForChartJS(chartData) {
                     }, 300); // Short delay to ensure tooltip is fully hidden
                 });
             }
-            
+
             // Set caret position
             tooltipEl.classList.remove("above", "below", "no-transform");
             if (tooltipModel.yAlign) {
@@ -604,11 +616,11 @@ function formatDataForChartJS(chartData) {
             } else {
                 tooltipEl.classList.add("no-transform");
             }
-            
+
             // Update the tooltip content
             const tableRoot = tooltipEl.querySelector("table");
             tableRoot.innerHTML = innerHtml;
-            
+
             // Add event listener to close button
             const closeBtn = tooltipEl.querySelector(".tooltip-close");
             if (closeBtn) {
@@ -636,10 +648,10 @@ function formatDataForChartJS(chartData) {
                     return false;
                 });
             }
-            
+
             // Position and style the tooltip
             const position = context.chart.canvas.getBoundingClientRect();
-            
+
             tooltipEl.style.opacity = 1;
             tooltipEl.style.position = "absolute";
             tooltipEl.style.left =
@@ -680,7 +692,14 @@ function formatDataForChartJS(chartData) {
                 axis: "xy", // Consider both axes for finding nearest element
             },
             // Add specific event handling for mobile devices
-            events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove', 'touchend'],
+            events: [
+                "mousemove",
+                "mouseout",
+                "click",
+                "touchstart",
+                "touchmove",
+                "touchend",
+            ],
             plugins: {
                 title: {
                     display: true,
@@ -1231,17 +1250,17 @@ var mobileTooltipLightbox = basicLightbox.create(mobileTooltipContent, {
     onShow: (instance) => {
         // Log that lightbox is visible (for debugging)
         console.log("Mobile tooltip lightbox shown");
-        
+
         // Add a visible close button at the top corner for iOS
         const container = document.getElementById("mobile-tooltip-container");
         if (container) {
             // Make sure container is visible
             container.style.display = "block";
         }
-        
+
         // Prevent body scrolling
         document.body.style.overflow = "hidden";
-        
+
         // Return true to allow the lightbox to show
         return true;
     },
@@ -1250,7 +1269,7 @@ var mobileTooltipLightbox = basicLightbox.create(mobileTooltipContent, {
         document.body.style.overflow = "";
         console.log("Mobile tooltip lightbox closed");
         return true;
-    }
+    },
 });
 
 // Function to create and add controls to the chart area
