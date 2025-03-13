@@ -445,9 +445,18 @@ function formatDataForChartJS(chartData) {
                                     formattedDate = `${game.game_date} `;
                                 }
                             }
-                            innerHtml += `<tr><td style="padding:0px 5px; font-family:'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; letter-spacing: 0.1px; line-height: 1.1; font-size:${gameFontSize};">
-                                <a href="${gameUrl}" style="color: #78c6ff; text-decoration: underline; padding: 1px 0;">
-                                ${formattedDate}${game.game_summary}</a></td></tr>`;
+                            
+                            // For mobile, we need special handling to prevent "sticky" links
+                            if (isMobile()) {
+                                innerHtml += `<tr><td style="padding:0px 5px; font-family:'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; letter-spacing: 0.1px; line-height: 1.1; font-size:${gameFontSize};">
+                                    <a href="javascript:void(0);" onclick="window.location.href='${gameUrl}'; return false;" data-nba-game="${game.game_id}" style="color: #78c6ff; text-decoration: underline; padding: 1px 0;">
+                                    ${formattedDate}${game.game_summary}</a></td></tr>`;
+                            } else {
+                                // Desktop uses normal links
+                                innerHtml += `<tr><td style="padding:0px 5px; font-family:'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; letter-spacing: 0.1px; line-height: 1.1; font-size:${gameFontSize};">
+                                    <a href="${gameUrl}" style="color: #78c6ff; text-decoration: underline; padding: 1px 0;">
+                                    ${formattedDate}${game.game_summary}</a></td></tr>`;
+                            }
                         });
 
                         // Update the "more" text to account for 9 examples instead of 8
@@ -480,9 +489,18 @@ function formatDataForChartJS(chartData) {
                                     formattedDate = `${game.game_date} `;
                                 }
                             }
-                            innerHtml += `<tr><td style="padding:0px 5px; font-family:'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; letter-spacing: 0.1px; line-height: 1.1; font-size:${gameFontSize};">
-                                <a href="${gameUrl}" style="color: #78c6ff; text-decoration: underline; padding: 1px 0;">
-                                ${formattedDate}${game.game_summary}</a></td></tr>`;
+                            
+                            // For mobile, use JavaScript to handle navigation to prevent "sticky" links
+                            if (isMobile()) {
+                                innerHtml += `<tr><td style="padding:0px 5px; font-family:'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; letter-spacing: 0.1px; line-height: 1.1; font-size:${gameFontSize};">
+                                    <a href="javascript:void(0);" onclick="window.location.href='${gameUrl}'; return false;" data-nba-game="${game.game_id}" style="color: #78c6ff; text-decoration: underline; padding: 1px 0;">
+                                    ${formattedDate}${game.game_summary}</a></td></tr>`;
+                            } else {
+                                // Desktop uses normal links
+                                innerHtml += `<tr><td style="padding:0px 5px; font-family:'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; letter-spacing: 0.1px; line-height: 1.1; font-size:${gameFontSize};">
+                                    <a href="${gameUrl}" style="color: #78c6ff; text-decoration: underline; padding: 1px 0;">
+                                    ${formattedDate}${game.game_summary}</a></td></tr>`;
+                            }
                         });
 
                         // Update the "more" text - make it more compact
@@ -803,26 +821,15 @@ function formatDataForChartJS(chartData) {
                                       ).toFixed(2)
                                     : "0.00";
 
-                            // Format win statistics with new header format
-                            // On mobile, format with each stat on its own line
-                            if (isMobile()) {
-                                return `${pointData.point_margin}<br/>Wins: ${
-                                    pointData.win_count
-                                }/${
-                                    pointData.game_count
-                                }<br/>Win %= ${winPercent}<br/>Occurs %= ${(
-                                    pointData.point_margin_occurs_percent * 100
-                                ).toFixed(2)}`;
-                            } else {
-                                // Desktop format remains the same
-                                return `${pointData.point_margin}: Wins ${
-                                    pointData.win_count
-                                }/${
-                                    pointData.game_count
-                                } | Win %= ${winPercent} | Occurs %= ${(
-                                    pointData.point_margin_occurs_percent * 100
-                                ).toFixed(2)}`;
-                            }
+                            // Format win statistics with each item on a new line - consistent across all devices
+                            return `${chartData.x_label}: ${pointData.point_margin}<br/>Wins: ${
+                                pointData.win_count
+                            } out of ${
+                                pointData.game_count
+                            } Total Games<br/>Win %: ${winPercent}<br/>Occurs %: ${(
+                                pointData.point_margin_occurs_percent * 100
+                            ).toFixed(2)}`;
+                            
                         },
                     },
                 },
@@ -1135,6 +1142,39 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     `;
     document.head.appendChild(style);
+    
+    // For mobile, add special handling to clear any lingering effects when returning to the page
+    if (isMobile()) {
+        // This will be triggered when returning from NBA.com via back button
+        window.addEventListener('pageshow', function(event) {
+            // Clear any visible tooltips
+            const tooltipEl = document.getElementById("chartjs-tooltip");
+            if (tooltipEl) {
+                tooltipEl.style.opacity = "0";
+                
+                // Empty the table contents
+                const table = tooltipEl.querySelector('table');
+                if (table) {
+                    table.innerHTML = '';
+                }
+            }
+        });
+        
+        // Also add a click handler to the document to clear tooltips when clicking anywhere
+        document.addEventListener('click', function(event) {
+            // If click is outside tooltip and tooltip exists, hide it
+            const tooltipEl = document.getElementById("chartjs-tooltip");
+            if (tooltipEl && !tooltipEl.contains(event.target)) {
+                tooltipEl.style.opacity = "0";
+                setTimeout(function() {
+                    const table = tooltipEl.querySelector('table');
+                    if (table) {
+                        table.innerHTML = '';
+                    }
+                }, 300);
+            }
+        });
+    }
 });
 
 // Function to make buttons stay in position during zoom and pan
