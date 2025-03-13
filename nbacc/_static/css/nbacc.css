@@ -178,7 +178,7 @@ canvas {
 
 /* Fit to screen icon for reset zoom */
 .zoom-reset-icon {
-    background-image: url("/_static/reset_zoom_icon.svg");
+    background-image: url("/nbacc/_static/reset_zoom_icon.svg");
 }
 
 /* Full screen toggle button */
@@ -194,17 +194,17 @@ canvas {
 
 /* Full screen icon */
 .full-screen-icon {
-    background-image: url("/_static/full_screen_icon.svg");
+    background-image: url("/nbacc/_static/full_screen_icon.svg");
 }
 
 /* Exit full screen icon */
 .exit-full-screen-icon {
-    background-image: url("/_static/exit_full_screen_icon.svg");
+    background-image: url("/nbacc/_static/exit_full_screen_icon.svg");
 }
 
 /* Save/disk icon for save as PNG */
 .save-png-icon {
-    background-image: url("/_static/save_disk_drive_icon.svg");
+    background-image: url("/nbacc/_static/save_disk_drive_icon.svg");
 }
 
 /* Chart error message */

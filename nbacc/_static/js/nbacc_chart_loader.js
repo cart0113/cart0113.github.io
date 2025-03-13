@@ -51,7 +51,9 @@ async function loadAndPlotChart(chartDiv) {
 
     // Construct the URL for the chart data using absolute path from root
     const rootUrl = window.location.protocol + "//" + window.location.host;
-    const jsonUrl = `${rootUrl}/_static/json/charts/${divId.split("_copy")[0]}.json`;
+    const jsonUrl = `${rootUrl}/nbacc/_static/json/charts/${
+        divId.split("_copy")[0]
+    }.json`;
 
     // Fetch the JSON data
     let chartData;
@@ -61,13 +63,7 @@ async function loadAndPlotChart(chartDiv) {
 
         // If absolute path fails, try an alternative path
         if (!response.ok) {
-            const altPath = `${rootUrl}/docs/source/_static/json/charts/${divId}.json`;
-            response = await fetch(altPath);
-
-            // If that fails too, throw an error
-            if (!response.ok) {
-                throw new Error(`Error can't find ${divId}.json!`);
-            }
+            throw new Error(`Error can't find ${divId}.json!`);
         }
 
         // Check if we have gzipped JSON (based on content type or extension)
