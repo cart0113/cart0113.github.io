@@ -251,6 +251,11 @@ function formatDataForChartJS(chartData) {
 
     // Custom external tooltip handler that supports HTML and sticky behavior
     const externalTooltipHandler = (context) => {
+        // Skip tooltips on mobile unless in fullscreen mode
+        if (isMobile() && !context.chart.isFullscreen) {
+            return;
+        }
+        
         // Tooltip Element
         let tooltipEl = document.getElementById("chartjs-tooltip");
 
@@ -1294,8 +1299,15 @@ function addControlsToChartArea(canvas, chart) {
                 }
 
                 // Also enable win_count numbers on scatter plot for mobile in fullscreen
-                // Set a flag on the chart that we can check in the winCountPlugin
+                // Set a flag on the chart that we can check in the winCountPlugin and tooltip handler
                 chart.isFullscreen = true;
+                
+                // Clear any existing tooltip to start fresh
+                const tooltipEl = document.getElementById("chartjs-tooltip");
+                if (tooltipEl) {
+                    tooltipEl.style.opacity = 0;
+                    tooltipEl.innerHTML = "<table></table>";
+                }
 
                 // We'll rerender the chart to apply all these changes
                 chart.update();
@@ -1345,8 +1357,15 @@ function addControlsToChartArea(canvas, chart) {
                 }
             }
 
-            // Remove the fullscreen flag to disable win count numbers
+            // Remove the fullscreen flag to disable win count numbers and tooltips
             chart.isFullscreen = false;
+            
+            // Hide any visible tooltips
+            const tooltipEl = document.getElementById("chartjs-tooltip");
+            if (tooltipEl) {
+                tooltipEl.style.opacity = 0;
+                tooltipEl.innerHTML = "<table></table>";
+            }
 
             // We need to update the chart to reflect these changes
             chart.update();
