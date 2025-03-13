@@ -10,6 +10,24 @@ Are Big Comebacks Getting More Commmon?
 A Look at 2017-2024:
 
 CHART
+
+
+.. raw:: html
+
+    <div id="nbacc_test_chart" class="nbacc-chart"></div>
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed scelerisque orci et cursus ornare. Cras egestas ex in ante iaculis interdum. Nunc vestibulum maximus lorem, eu pharetra libero. Aenean euismod lobortis nibh, a semper lorem mollis ut. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Mauris eu nulla ut felis tincidunt ullamcorper. Quisque sed orci et eros efficitur bibendum. Donec est diam, bibendum quis fermentum vitae, ultrices at sapien. Mauris non velit ut magna auctor mattis vitae vitae tortor. Nam sodales auctor turpis, nec euismod nunc dignissim eu.
+
+Suspendisse iaculis orci tellus, ac egestas nibh efficitur ut. Aliquam feugiat tellus ut tempus tincidunt. Vivamus mollis purus lorem, sed laoreet nunc posuere sed. Suspendisse potenti. Suspendisse mi augue, vestibulum at risus vel, porttitor eleifend enim. Morbi aliquam iaculis tellus, vitae tempor magna malesuada sed. Proin eu bibendum sapien. Proin commodo quam a lacus posuere, in hendrerit neque convallis. Sed ornare tellus sit amet hendrerit varius. Sed justo felis, tincidunt quis ex vitae, elementum mattis elit. Praesent sapien lacus, commodo ac auctor sed, commodo at nisl. In bibendum dolor at pulvinar elementum. Suspendisse tellus velit, mollis vitae urna accumsan, rhoncus suscipit odio. Nulla condimentum lorem a diam luctus pulvinar. Sed porttitor feugiat ligula, ac ultrices mauris volutpat porta.
+
+Donec quis elit semper, tincidunt quam vel, mollis elit. Sed ultricies orci a convallis condimentum. Pellentesque interdum facilisis neque et vestibulum. Sed ac sollicitudin lacus. Etiam accumsan laoreet posuere. Sed vel enim massa. Vestibulum sed convallis ipsum, at suscipit ex. Donec eget massa sed neque vestibulum sagittis a in lectus. Quisque blandit, erat ut cursus pretium, magna tortor maximus urna, et luctus lacus felis convallis velit. Vestibulum interdum velit magna, rhoncus consectetur massa vulputate id. Suspendisse eget magna at tortor molestie varius et nec justo. Morbi ornare dolor in diam vestibulum, at vehicula elit rhoncus.
+
+Vivamus mollis et erat varius tincidunt. Proin ac molestie eros. Pellentesque id nibh quam. Nulla sed turpis ante. Suspendisse fermentum posuere malesuada. Quisque elementum fringilla massa sed dignissim. Pellentesque imperdiet et libero sit amet tincidunt. In hac habitasse platea dictumst. Praesent eu tristique ante. Donec mattis ut purus vel commodo. Duis facilisis et mi at blandit. Duis finibus odio at justo lacinia vestibulum. Integer non tincidunt tellus, aliquet varius lacus. Aliquam erat volutpat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Sed porttitor lobortis diam, a ullamcorper neque blandit eu.
+
+Nunc pulvinar bibendum urna vel pellentesque. Pellentesque consequat libero turpis, et elementum lorem rhoncus ut. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Cras porta facilisis pharetra. Donec convallis ipsum eu mattis pharetra. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer lobortis pulvinar commodo. Nam tempus mi nunc, ut pharetra purus efficitur in. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Curabitur lorem turpis, posuere at dignissim vel, vulputate id nisi. Vestibulum arcu ante, posuere at aliquam id, ullamcorper a risus.
+
+
+
 CHART
 CHART
 CHART
@@ -17,20 +35,12 @@ CHART
 CHART
 CHART
 CHART
-CHART
-CHART
-CHART
-CHART
-CHART
-CHART
-CHART
-CHART
-CHART
-CHART
-CHART
-CHART
-CHART
-CHART
+
+.. raw:: html
+
+    <div id="nbacc_test_chart_copy0" class="nbacc-chart" \>
+
+
 CHART
 CHART
 CHART

@@ -6,4 +6,4 @@ interactive
 
 .. raw:: html
 
-    <div id="nbacc_test_chart" class="nba-cc chart"></div>
+    <div id="nbacc_test_chart_copy0" class="nbacc-chart"/>

@@ -8,14 +8,19 @@ const loadedCharts = new Set();
 // Store chart instances for reference (needed for reset functionality)
 const chartInstances = {};
 
-// Function to check if an element is in the viewport
+// Function to check if any part of an element is in the viewport
+// Returns true if any portion of the element is visible on screen
 function isElementInViewport(el) {
     const rect = el.getBoundingClientRect();
+    const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+    const windowWidth = window.innerWidth || document.documentElement.clientWidth;
+
+    // Check if any part of the element is visible
     return (
-        rect.top >= 0 &&
-        rect.left >= 0 &&
-        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-        rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+        rect.bottom > 0 &&
+        rect.right > 0 &&
+        rect.left < windowWidth &&
+        rect.top < windowHeight
     );
 }
 
@@ -36,23 +41,27 @@ async function loadAndPlotChart(chartDiv) {
     }
 
     // Mark this chart as loaded to avoid duplicate processing
+    if (loadedCharts.has(divId)) {
+        throw new AssertionError(`Chart with ID ${divId} has already been loaded`);
+    }
     loadedCharts.add(divId);
 
     // Show loading indicator
-    chartDiv.innerHTML = '<div class="chart-loading">Loading chart data...</div>';
+    // chartDiv.innerHTML = '<div class="chart-loading">Loading chart data...</div>';
 
-    // Construct the URL for the chart data
-    const jsonUrl = `../_static/json/charts/${divId}.json`;
+    // Construct the URL for the chart data using absolute path from root
+    const rootUrl = window.location.protocol + "//" + window.location.host;
+    const jsonUrl = `${rootUrl}/_static/json/charts/${divId.split("_copy")[0]}.json`;
 
     // Fetch the JSON data
     let chartData;
     try {
-        // First try a direct path
+        // Try the absolute path
         let response = await fetch(jsonUrl);
 
-        // If direct path fails, try an alternative path
+        // If absolute path fails, try an alternative path
         if (!response.ok) {
-            const altPath = `../docs/source/_static/json/charts/${divId}.json`;
+            const altPath = `${rootUrl}/docs/source/_static/json/charts/${divId}.json`;
             response = await fetch(altPath);
 
             // If that fails too, throw an error
@@ -63,7 +72,9 @@ async function loadAndPlotChart(chartDiv) {
 
         // Check if we have gzipped JSON (based on content type or extension)
         const contentType = response.headers.get("Content-Type");
-        if (jsonUrl.endsWith(".gz") || (contentType && contentType.includes("gzip"))) {
+        const isGzipped =
+            jsonUrl.endsWith(".gz") || (contentType && contentType.includes("gzip"));
+        if (isGzipped) {
             // Use the readGzJson utility function
             chartData = await readGzJson(response);
         } else {
@@ -83,7 +94,12 @@ async function loadAndPlotChart(chartDiv) {
     chartDiv.innerHTML = "";
 
     // Calculate desired height based on chart data
-    let chartHeight = 600; /* Increased from 700 to 900 */
+    let chartHeight = 600;
+
+    // Create a parent container for the chart container
+    const chartContainerParent = document.createElement("div");
+    chartContainerParent.className = "chart-container-parent";
+    chartContainerParent.style.width = "100%";
 
     // Create a container for the chart specifically for Chart.js
     const chartContainer = document.createElement("div");
@@ -91,7 +107,12 @@ async function loadAndPlotChart(chartDiv) {
     chartContainer.style.position = "relative";
     chartContainer.style.height = `${chartHeight}px`;
     chartContainer.style.width = "100%";
-    chartDiv.appendChild(chartContainer);
+
+    // Append the chart container to the parent container
+    chartContainerParent.appendChild(chartContainer);
+
+    // Append the parent container to the chart div
+    chartDiv.appendChild(chartContainerParent);
 
     // Create canvas with proper size attributes
     const canvas = document.createElement("canvas");
@@ -107,30 +128,7 @@ async function loadAndPlotChart(chartDiv) {
     // Add canvas to container
     chartContainer.appendChild(canvas);
 
-    // Create button container
-    const buttonContainer = document.createElement("div");
-    buttonContainer.className = "chart-buttons";
-    buttonContainer.style.textAlign = "center";
-    buttonContainer.style.marginTop = "10px";
-    chartDiv.appendChild(buttonContainer);
-
-    // Add Reset Zoom button
-    const resetButton = document.createElement("button");
-    resetButton.className = "chart-btn reset-zoom-btn";
-    resetButton.textContent = "Reset Zoom";
-    resetButton.onclick = function () {
-        resetChartZoom(divId);
-    };
-    buttonContainer.appendChild(resetButton);
-
-    // Add Save As PNG button
-    const saveButton = document.createElement("button");
-    saveButton.className = "chart-btn save-png-btn";
-    saveButton.textContent = "Save As PNG";
-    saveButton.onclick = function () {
-        saveChart(canvas);
-    };
-    buttonContainer.appendChild(saveButton);
+    // Note: We're no longer creating button container here, as it will be created by createChartJSChart
 
     // Process JSON data for Chart.js
     const formattedData = formatDataForChartJS(chartData);
@@ -169,23 +167,38 @@ async function loadAndPlotChart(chartDiv) {
     // Add global key event listener
     document.addEventListener("keydown", chartKeyboardHandler);
 
-    // Mark chart as active when mouse enters
-    canvas.addEventListener("mouseenter", function () {
-        // Remove active class from all charts
-        document.querySelectorAll(".nba-cc.chart").forEach((div) => {
-            div.classList.remove("active-chart");
-        });
-        // Add active class to this chart
-        chartDiv.classList.add("active-chart");
-    });
+    // // Mark chart as active when mouse enters
+    // canvas.addEventListener("mouseenter", function () {
+    //     // Remove active class from all charts
+    //     document.querySelectorAll(".nba-cc.chart").forEach((div) => {
+    //         div.classList.remove("active-chart");
+    //     });
+    //     // Add active class to this chart
+    //     chartDiv.classList.add("active-chart");
+    // });
+
+    // // Handle mouse leaving the canvas
+    // canvas.addEventListener("mouseleave", function () {
+    //     // Hide any tooltips when mouse leaves the chart
+    //     const tooltipEl = document.getElementById("chartjs-tooltip");
+    //     if (tooltipEl) {
+    //         // Add a small delay to allow moving to the tooltip itself
+    //         setTimeout(() => {
+    //             if (!tooltipEl.matches(":hover")) {
+    //                 tooltipEl.style.opacity = 0;
+    //                 tooltipEl.setAttribute("data-sticky", "false");
+    //             }
+    //         }, 100);
+    //     }
+    // });
 }
 
 // Check all chart divs and load those in the viewport
 function checkChartsInViewport() {
-    const chartDivs = document.querySelectorAll("div.nba-cc.chart");
+    const chartDivs = document.querySelectorAll("div.nbacc-chart");
 
     if (chartDivs.length === 0) {
-        console.log("No chart divs found with class 'nba-cc chart'");
+        console.log("No chart divs found with class 'nbacc-chart'");
     }
 
     chartDivs.forEach((div) => {

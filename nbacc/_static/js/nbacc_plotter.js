@@ -9,7 +9,7 @@ const zoomOptions = {
             threshold: 10,
         },
         wheel: {
-            enabled: true,
+            enabled: false,
         },
         pinch: {
             enabled: true,
@@ -19,8 +19,32 @@ const zoomOptions = {
             threshold: 10,
         },
         mode: "xy",
+        onZoom: function ({ chart }) {
+            // Update buttons during zoom (not just after completion)
+            updateButtonPositions(chart);
+        },
+        onZoomComplete: function ({ chart }) {
+            // Update button visibility when zoom changes
+            // updateChartControlsVisibility(chart);
+            // Reposition buttons after zoom
+            updateButtonPositions(chart);
+        },
     },
 };
+
+const colorWheel = [
+    "rgba(58, 129, 210, 0.5)", // Blue
+    "rgba(254, 150, 45, 0.5)", // Orange
+    "rgba(66, 165, 81, 0.5)", // Green
+    "rgba(255, 99, 132, 0.5)", // Red
+    "rgba(153, 102, 255, 0.5)", // Purple
+    "rgba(255, 206, 86, 0.5)", // Yellow
+    "rgba(199, 199, 199, 0.5)", // Gray
+];
+
+function getColorWheel(opacity) {
+    return colorWheel.map((color) => color.replace(/0\.5\)/, `${opacity})`));
+}
 
 // Custom plugin to add a grey background box around the plot area
 const plotBackgroundPlugin = {
@@ -49,9 +73,76 @@ const plotBackgroundPlugin = {
     },
 };
 
+// Global variable to track whether to show R² values
+let showRSquared = false;
+
+// Function to update tooltip with or without R² values
+function updateRSquaredDisplay() {
+    // If tooltip is currently visible, update it
+    const tooltipEl = document.getElementById("chartjs-tooltip");
+    if (tooltipEl && tooltipEl.style.opacity !== "0") {
+        // Find all cells with R² data
+        const tooltipCells = tooltipEl.querySelectorAll(
+            "td[data-has-r-squared='true']"
+        );
+        tooltipCells.forEach((cell) => {
+            if (showRSquared) {
+                // Show the R² part
+                cell.innerHTML = cell.getAttribute("data-full-text");
+            } else {
+                // Hide the R² part
+                cell.innerHTML = cell.getAttribute("data-text-without-r");
+            }
+        });
+    }
+}
+
+// Add keyboard event listener to toggle R² display with 'r' key
+document.addEventListener("keydown", function (event) {
+    if (event.key === "r" || event.key === "R") {
+        showRSquared = !showRSquared;
+        updateRSquaredDisplay();
+    }
+});
+
 // Format the NBA data JSON structure for Chart.js
 function formatDataForChartJS(chartData) {
     var N = chartData.y_ticks.length;
+
+    // Create a dictionary to store regression line data for each point margin
+    // Format: pointMarginData[pointMargin][legendText] = { winPercent, rSquared }
+    const pointMarginData = {};
+
+    // Build the point margin data dictionary for tooltips
+    if (chartData.lines) {
+        chartData.lines.forEach((line) => {
+            // For each x-value in the regression line
+            for (
+                let x = Math.ceil(chartData.min_x);
+                x <= Math.floor(chartData.max_x);
+                x++
+            ) {
+                if (!pointMarginData[x]) {
+                    pointMarginData[x] = {};
+                }
+
+                // Calculate y-value using line equation y = mx + b
+                const y = line.m * x + line.b;
+
+                // Calculate win percentage using normalCDF
+                const winPercentage = (100.0 * normalCDF(y)).toFixed(2);
+
+                // Calculate R-squared (squared correlation coefficient)
+                const rSquared = (line.r_value * line.r_value).toPrecision(2);
+
+                // Store the data using legend as key
+                pointMarginData[x][line.legend] = {
+                    winPercent: winPercentage,
+                    rSquared: rSquared,
+                };
+            }
+        });
+    }
 
     const yTickLabelMap = {};
     for (let i = 0; i < N; i++) {
@@ -109,7 +200,7 @@ function formatDataForChartJS(chartData) {
                         // Draw the win_count as white text - larger and very bold
                         ctx.save();
                         ctx.fillStyle = "white";
-                        ctx.font = "900 14px Arial"; // Increased weight to 900 (extra bold) and size to 15px
+                        ctx.font = "900 11px Arial"; // Increased weight to 900 (extra bold) and size to 15px
                         ctx.textAlign = "center";
                         ctx.textBaseline = "middle";
 
@@ -136,178 +227,190 @@ function formatDataForChartJS(chartData) {
 
     // Custom external tooltip handler that supports HTML and sticky behavior
     const externalTooltipHandler = (context) => {
-        // Tooltip Element
-        let tooltipEl = document.getElementById("chartjs-tooltip");
-
-        // Track if the tooltip is "sticky" (should stay visible)
-        if (!tooltipEl) {
-            tooltipEl = document.createElement("div");
-            tooltipEl.id = "chartjs-tooltip";
-            tooltipEl.innerHTML = "<table></table>";
-            tooltipEl.setAttribute("data-sticky", "false");
-            document.body.appendChild(tooltipEl);
-
-            // Add mouse enter/leave events for the tooltip itself
-            tooltipEl.addEventListener("mouseenter", () => {
-                tooltipEl.setAttribute("data-sticky", "true");
-            });
-
-            tooltipEl.addEventListener("mouseleave", () => {
-                tooltipEl.setAttribute("data-sticky", "false");
-                // Hide tooltip when mouse leaves if not interacting with links
-                if (tooltipEl.opacity !== 0 && !tooltipEl.querySelector(":hover")) {
-                    tooltipEl.style.opacity = 0;
-                }
-            });
-        }
-
-        // If sticky and mouse is over tooltip, don't hide it
-        if (
-            tooltipEl.getAttribute("data-sticky") === "true" &&
-            tooltipEl.matches(":hover")
-        ) {
-            return;
-        }
-
-        // Hide if no tooltip
+        // Check if we're on a mobile device
+        const isMobileDevice = isMobile();
+        
+        // Get tooltip model data that we'll need in either case
         const tooltipModel = context.tooltip;
-        if (
-            tooltipModel.opacity === 0 &&
-            tooltipEl.getAttribute("data-sticky") !== "true"
-        ) {
-            tooltipEl.style.opacity = 0;
+        const titleLines = tooltipModel.title || [];
+        
+        // Check if tooltip should be hidden
+        if (tooltipModel.opacity === 0) {
+            // For mobile, potentially hide the lightbox
+            if (isMobileDevice && mobileTooltipLightbox.visible()) {
+                // Don't close immediately to allow interaction with links
+                return; // We'll let the lightbox handle its own visibility
+            }
+            
+            // For desktop, handle the normal tooltip visibility
+            const tooltipEl = document.getElementById("chartjs-tooltip");
+            if (tooltipEl) {
+                // Only keep showing tooltip if it's sticky AND being hovered
+                if (
+                    !(
+                        tooltipEl.getAttribute("data-sticky") === "true" &&
+                        tooltipEl.matches(":hover")
+                    )
+                ) {
+                    tooltipEl.style.opacity = 0;
+                }
+            }
             return;
         }
+        
+        // Get the dataset information we'll need for either tooltip type
+        const datasetIndex = tooltipModel.dataPoints[0].datasetIndex;
+        const index = tooltipModel.dataPoints[0].dataIndex;
+        const dataset = context.chart.data.datasets[datasetIndex];
+        
+        // Generate HTML content for tooltip (will be used in both mobile and desktop)
+        let innerHtml = "<thead>";
 
-        // Set caret position
-        tooltipEl.classList.remove("above", "below", "no-transform");
-        if (tooltipModel.yAlign) {
-            tooltipEl.classList.add(tooltipModel.yAlign);
-        } else {
-            tooltipEl.classList.add("no-transform");
-        }
+        // Add close button to header
+        innerHtml += `
+            <tr>
+                <th style="color:#f2f2f2; font-weight:bold; padding:5px 45px 5px 5px; position:relative; font-size:15px;">
+                    ${titleLines[0] || ""}
+                    <span class="tooltip-close" style="position:absolute; right:8px; top:50%; 
+                        transform: translateY(-50%); cursor:pointer; width:20px; height:20px; text-align:center; 
+                        line-height:20px; color:#f2f2f2; background:rgba(255,255,255,0.25); 
+                        border-radius:50%; font-size:14px;">×</span>
+                </th>
+            </tr>`;
+        innerHtml += "</thead><tbody>";
 
-        // Set Text
-        if (tooltipModel.body) {
-            const titleLines = tooltipModel.title || [];
+        // Special handling for our custom content
+        
+        // Check if this is a regression line dataset (they are even-indexed)
+        if (datasetIndex % 2 === 0) {
+            // This is a regression line - we need to show all regression data for this x-value
+            const dataPoint = dataset.data[index];
+            if (!dataPoint) return;
 
-            let innerHtml = "<thead>";
+            // Get the x-value (point margin)
+            const xValue = parseFloat(dataPoint.x).toFixed(0);
 
-            // Add close button to header
-            innerHtml += `
-                <tr>
-                    <th style="color:#f2f2f2; font-weight:bold; padding:4px; position:relative; font-size:13px;">
-                        ${titleLines[0] || ""}
-                        <span class="tooltip-close" style="position:absolute; right:2px; top:2px; 
-                            cursor:pointer; width:18px; height:18px; text-align:center; 
-                            line-height:18px; color:#f2f2f2; background:rgba(255,255,255,0.15); 
-                            border-radius:50%;">×</span>
-                    </th>
-                </tr>`;
-            innerHtml += "</thead><tbody>";
+            // Check if we have pre-calculated data for this point margin
+            if (pointMarginData[xValue]) {
+                const colors = getColorWheel(0.8);
 
-            // Special handling for our custom content
-            const datasetIndex = tooltipModel.dataPoints[0].datasetIndex;
-            const index = tooltipModel.dataPoints[0].dataIndex;
-            const dataset = context.chart.data.datasets[datasetIndex];
+                // Loop through all lines and add their data
+                Object.entries(pointMarginData[xValue]).forEach(
+                    ([legend, data], i) => {
+                        // Remove the "(XXXX Total Games)" part from the legend text
+                        const cleanLegend = legend.replace(
+                            /\s+\(\d+\s+Total\s+Games\)$/,
+                            ""
+                        );
 
-            // Only show for scatter points, not trend lines
-            if (dataset.type === "scatter") {
-                const dataPoint = dataset.data[index];
+                        // Get the color for this line (more opaque for the box)
+                        const color = colors[i % colors.length];
 
-                // Find the corresponding line index
-                const lineIndex = Math.floor(datasetIndex / 2);
+                        // Create two versions of the text - with and without R² value - all text in bold and larger
+                        const textWithoutR = `<span style="display:inline-block; width:14px; height:14px; background-color:${color}; margin-right:8px; border-radius:2px;"></span>
+                        <span style="font-weight:bold; font-size:14px;">${cleanLegend}:</span> <span style="font-weight:bold; font-size:14px;">Win %= ${data.winPercent}</span>`;
 
-                // Find the matching point_margin_data
-                const pointData = chartData.lines[lineIndex].point_margin_data.find(
-                    (item) =>
-                        item.point_margin === dataPoint.x && item.sigma === dataPoint.y
-                );
+                        const fullText = `<span style="display:inline-block; width:14px; height:14px; background-color:${color}; margin-right:8px; border-radius:2px;"></span>
+                        <span style="font-weight:bold; font-size:14px;">${cleanLegend}:</span> <span style="font-weight:bold; font-size:14px;">Win %= ${data.winPercent} | R² Value= ${data.rSquared}</span>`;
 
-                if (pointData) {
-                    // Win games section
-                    if (pointData.win_count > 0) {
-                        innerHtml +=
-                            '<tr><td style="padding:3px 5px 1px;"><b>Win examples:</b></td></tr>';
-
-                        // Show up to 9 win examples (increased from 8)
-                        const winExamples = pointData.win_games.slice(0, 9);
-                        winExamples.forEach((game) => {
-                            const gameUrl = `http://www.nba.com/game/${game.game_id}`;
-                            // Format the date to be more readable (YYYY-MM-DD to MM/DD/YYYY)
-                            let formattedDate = "";
-                            if (game.game_date) {
-                                const dateParts = game.game_date.split("-");
-                                if (dateParts.length === 3) {
-                                    formattedDate = `${dateParts[1]}/${dateParts[2]}/${dateParts[0]} `;
-                                } else {
-                                    formattedDate = `${game.game_date} `;
-                                }
-                            }
-                            innerHtml += `<tr><td style="padding:0px 5px; font-family:'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; letter-spacing: 0.1px; line-height: 1.1; font-size:12px;">
-                                <a href="${gameUrl}" target="_blank" rel="noopener noreferrer" style="color: #78c6ff; text-decoration: underline; padding: 1px 0;">
-                                ${formattedDate}${game.game_summary}</a></td></tr>`;
-                        });
-
-                        // Update the "more" text to account for 9 examples instead of 8
-                        if (pointData.win_games.length > 9) {
-                            innerHtml += `<tr><td style="padding:0px 5px 3px; font-size: 0.85em;">...and ${
-                                pointData.win_count - 9
-                            } more</td></tr>`;
-                        }
+                        // Display according to showRSquared toggle
+                        innerHtml += `<tr><td 
+                        style="padding:3px 5px 3px 5px; font-family:'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.4;"
+                        data-has-r-squared="true"
+                        data-text-without-r="${textWithoutR.replace(
+                            /"/g,
+                            "&quot;"
+                        )}" 
+                        data-full-text="${fullText.replace(/"/g, "&quot;")}">
+                        ${showRSquared ? fullText : textWithoutR}
+                    </td></tr>`;
                     }
+                );
+            }
+        }
+        // Show data points tooltip
+        else if (dataset.type === "scatter") {
+            const dataPoint = dataset.data[index];
 
-                    // Loss games section - keep at 4 examples as requested
-                    if (pointData.loss_count > 0) {
-                        innerHtml +=
-                            '<tr><td style="padding:3px 5px 1px;"><b>Loss examples:</b></td></tr>';
+            // Find the corresponding line index
+            const lineIndex = Math.floor(datasetIndex / 2);
 
-                        // Still showing 4 loss examples
-                        const lossExamples = pointData.loss_games.slice(0, 4);
-                        lossExamples.forEach((game) => {
-                            const gameUrl = `http://www.nba.com/games/${game.game_id}`;
-                            // Format the date to be more readable (YYYY-MM-DD to MM/DD/YYYY)
-                            let formattedDate = "";
-                            if (game.game_date) {
-                                const dateParts = game.game_date.split("-");
-                                if (dateParts.length === 3) {
-                                    formattedDate = `${dateParts[1]}/${dateParts[2]}/${dateParts[0]} `;
-                                } else {
-                                    formattedDate = `${game.game_date} `;
-                                }
+            // Find the matching point_margin_data
+            const pointData = chartData.lines[lineIndex].point_margin_data.find(
+                (item) =>
+                    item.point_margin === dataPoint.x && item.sigma === dataPoint.y
+            );
+
+            if (pointData) {
+                // Win games section
+                if (pointData.win_count > 0) {
+                    innerHtml +=
+                        '<tr><td style="padding:3px 5px 1px;"><b>Win examples:</b></td></tr>';
+
+                    // Show up to 9 win examples (increased from 8)
+                    const winExamples = pointData.win_games.slice(0, 9);
+                    winExamples.forEach((game) => {
+                        const gameUrl = `http://www.nba.com/game/${game.game_id}`;
+                        // Format the date to be more readable (YYYY-MM-DD to MM/DD/YYYY)
+                        let formattedDate = "";
+                        if (game.game_date) {
+                            const dateParts = game.game_date.split("-");
+                            if (dateParts.length === 3) {
+                                formattedDate = `${dateParts[1]}/${dateParts[2]}/${dateParts[0]} `;
+                            } else {
+                                formattedDate = `${game.game_date} `;
                             }
-                            innerHtml += `<tr><td style="padding:0px 5px; font-family:'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; letter-spacing: 0.1px; line-height: 1.1; font-size:12px;">
-                                <a href="${gameUrl}" target="_blank" rel="noopener noreferrer" style="color: #78c6ff; text-decoration: underline; padding: 1px 0;">
-                                ${formattedDate}${game.game_summary}</a></td></tr>`;
-                        });
-
-                        // Update the "more" text - make it more compact
-                        if (pointData.loss_games.length > 4) {
-                            innerHtml += `<tr><td style="padding:0px 5px 2px; font-size: 0.85em;">...and ${
-                                pointData.loss_count - 4
-                            } more</td></tr>`;
                         }
+                        innerHtml += `<tr><td style="padding:0px 5px; font-family:'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; letter-spacing: 0.1px; line-height: 1.1; font-size:12px;">
+                            <a href="${gameUrl}" target="_blank" rel="noopener noreferrer" style="color: #78c6ff; text-decoration: underline; padding: 1px 0;">
+                            ${formattedDate}${game.game_summary}</a></td></tr>`;
+                    });
+
+                    // Update the "more" text to account for 9 examples instead of 8
+                    if (pointData.win_games.length > 9) {
+                        innerHtml += `<tr><td style="padding:0px 5px 3px; font-size: 0.85em;">...and ${
+                            pointData.win_count - 9
+                        } more</td></tr>`;
+                    }
+                }
+
+                // Loss games section - keep at 4 examples as requested
+                if (pointData.loss_count > 0) {
+                    innerHtml +=
+                        '<tr><td style="padding:3px 5px 1px;"><b>Loss examples:</b></td></tr>';
+
+                    // Still showing 4 loss examples
+                    const lossExamples = pointData.loss_games.slice(0, 4);
+                    lossExamples.forEach((game) => {
+                        const gameUrl = `http://www.nba.com/game/${game.game_id}`;
+                        // Format the date to be more readable (YYYY-MM-DD to MM/DD/YYYY)
+                        let formattedDate = "";
+                        if (game.game_date) {
+                            const dateParts = game.game_date.split("-");
+                            if (dateParts.length === 3) {
+                                formattedDate = `${dateParts[1]}/${dateParts[2]}/${dateParts[0]} `;
+                            } else {
+                                formattedDate = `${game.game_date} `;
+                            }
+                        }
+                        innerHtml += `<tr><td style="padding:0px 5px; font-family:'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; letter-spacing: 0.1px; line-height: 1.1; font-size:12px;">
+                            <a href="${gameUrl}" target="_blank" rel="noopener noreferrer" style="color: #78c6ff; text-decoration: underline; padding: 1px 0;">
+                            ${formattedDate}${game.game_summary}</a></td></tr>`;
+                    });
+
+                    // Update the "more" text - make it more compact
+                    if (pointData.loss_games.length > 4) {
+                        innerHtml += `<tr><td style="padding:0px 5px 2px; font-size: 0.85em;">...and ${
+                            pointData.loss_count - 4
+                        } more</td></tr>`;
                     }
                 }
             }
-
-            innerHtml += "</tbody>";
-
-            const tableRoot = tooltipEl.querySelector("table");
-            tableRoot.innerHTML = innerHtml;
-
-            // Add event listener to close button
-            const closeBtn = tooltipEl.querySelector(".tooltip-close");
-            if (closeBtn) {
-                closeBtn.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    tooltipEl.style.opacity = 0;
-                    tooltipEl.setAttribute("data-sticky", "false");
-                });
-            }
         }
 
-        // Get the color of the hovered data point
+        innerHtml += "</tbody>";
+        
+        // Get the color of the hovered data point - used for styling
         let borderColor = "rgba(255, 255, 255, 0.6)"; // Default fallback color
 
         // Try to get the actual color of the dataset
@@ -315,66 +418,275 @@ function formatDataForChartJS(chartData) {
             const datasetIndex = tooltipModel.dataPoints[0].datasetIndex;
             const dataset = context.chart.data.datasets[datasetIndex];
 
-            // Use the background color or border color of the dataset
-            if (dataset.backgroundColor) {
-                // For scatter plots (points), use backgroundColor - make it more opaque
-                if (
-                    typeof dataset.backgroundColor === "string" &&
-                    dataset.backgroundColor.includes("rgba")
-                ) {
-                    // If it's a semi-transparent color, make it more opaque for the border
-                    borderColor = dataset.backgroundColor.replace(
+            // Check if this is a regression line (even-indexed datasets) or a scatter point (odd-indexed)
+            if (datasetIndex % 2 === 0) {
+                // For regression lines, use a medium-dark gray
+                borderColor = "rgba(80, 80, 80, 0.9)"; // Medium-dark gray for regression tooltips
+            } else {
+                // For scatter points, use the dataset color with consistent opacity
+                // Find the original color from the dataset configuration
+                const lineIndex = Math.floor(datasetIndex / 2); // Get the line index
+                const colors = getColorWheel(0.5);
+                const color = colors[lineIndex % colors.length];
+
+                // Make the border color more opaque for better visibility
+                if (typeof color === "string" && color.includes("rgba")) {
+                    borderColor = color.replace(
                         /rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d\.]+\)/,
                         "rgba($1, $2, $3, 0.9)"
                     );
                 } else {
-                    borderColor = dataset.backgroundColor;
+                    borderColor = color;
                 }
-            } else if (dataset.borderColor) {
-                borderColor = dataset.borderColor;
             }
         }
+        
+        // For mobile devices, show tooltip in a lightbox
+        if (isMobileDevice) {
+            console.log("Mobile device detected - preparing lightbox");
+            
+            // Get the mobile tooltip container and inner element
+            const mobileContainer = document.getElementById("mobile-tooltip-container");
+            if (!mobileContainer) {
+                console.error("Mobile tooltip container not found");
+                return;
+            }
+            
+            const innerContainer = mobileContainer.querySelector(".mobile-tooltip-inner");
+            if (!innerContainer) {
+                console.error("Mobile tooltip inner container not found");
+                return;
+            }
+            
+            // Clear previous content
+            innerContainer.innerHTML = "";
+            
+            // Create a table element
+            const tableEl = document.createElement("table");
+            tableEl.className = "mobile-tooltip-table";
+            tableEl.innerHTML = innerHtml;
+            innerContainer.appendChild(tableEl);
+            
+            // Add an explicit close button for iOS
+            const explicitCloseBtn = document.createElement("button");
+            explicitCloseBtn.className = "mobile-explicit-close";
+            explicitCloseBtn.textContent = "Close";
+            explicitCloseBtn.style.display = "block";
+            explicitCloseBtn.style.margin = "15px auto 0";
+            explicitCloseBtn.style.padding = "10px 20px";
+            explicitCloseBtn.style.backgroundColor = "#f8f9fa";
+            explicitCloseBtn.style.border = "1px solid #ced4da";
+            explicitCloseBtn.style.borderRadius = "4px";
+            explicitCloseBtn.style.fontSize = "16px";
+            explicitCloseBtn.style.color = "#333";
+            explicitCloseBtn.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log("Explicit close button clicked");
+                mobileTooltipLightbox.close();
+            };
+            innerContainer.appendChild(explicitCloseBtn);
+            
+            // Style the mobile tooltip container
+            mobileContainer.style.backgroundColor = "rgba(29, 53, 87, 0.95)"; // Dark to medium blue
+            mobileContainer.style.color = "#f2f2f2"; // Very light gray
+            mobileContainer.style.borderRadius = "10px"; // More rounded corners
+            mobileContainer.style.padding = "15px"; // More padding for touch targets
+            mobileContainer.style.maxWidth = "90%";
+            mobileContainer.style.width = "90%";
+            mobileContainer.style.margin = "0 auto";
+            mobileContainer.style.boxShadow = "0px 3px 15px rgba(0,0,0,0.3)";
+            mobileContainer.style.borderWidth = "6px";
+            mobileContainer.style.borderStyle = "solid";
+            mobileContainer.style.borderColor = borderColor; // Use the dataset color
+            mobileContainer.style.fontFamily = "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+            mobileContainer.style.fontSize = "16px"; // Larger for mobile
+            mobileContainer.style.maxHeight = "80vh";
+            mobileContainer.style.overflowY = "auto";
+            mobileContainer.style.WebkitOverflowScrolling = "touch"; // Smooth scrolling on iOS
+            
+            // Add click handler to close button in the header
+            const closeBtn = mobileContainer.querySelector(".tooltip-close");
+            if (closeBtn) {
+                // Replace with a larger button for mobile
+                closeBtn.style.width = "30px";
+                closeBtn.style.height = "30px";
+                closeBtn.style.lineHeight = "30px";
+                closeBtn.style.fontSize = "20px";
+                closeBtn.style.background = "rgba(255,255,255,0.3)";
+                
+                // First remove any existing event listeners to avoid duplicates
+                closeBtn.replaceWith(closeBtn.cloneNode(true));
+                
+                // Get the newly cloned button
+                const newCloseBtn = mobileContainer.querySelector(".tooltip-close");
+                newCloseBtn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log("Close button clicked");
+                    mobileTooltipLightbox.close();
+                    return false;
+                });
+            }
+            
+            // Show the lightbox if not already visible
+            if (!mobileTooltipLightbox.visible()) {
+                console.log("Showing mobile tooltip lightbox");
+                try {
+                    mobileTooltipLightbox.show();
+                } catch (e) {
+                    console.error("Error showing lightbox:", e);
+                }
+            } else {
+                console.log("Lightbox already visible");
+            }
+        } 
+        // For desktop, use the regular hover tooltip
+        else {
+            // Tooltip Element
+            let tooltipEl = document.getElementById("chartjs-tooltip");
 
-        // Position and style the tooltip
-        const position = context.chart.canvas.getBoundingClientRect();
-        const bodyFont = tooltipModel.options.bodyFont;
+            // Track if the tooltip is "sticky" (should stay visible)
+            if (!tooltipEl) {
+                tooltipEl = document.createElement("div");
+                tooltipEl.id = "chartjs-tooltip";
+                tooltipEl.innerHTML = "<table></table>";
+                tooltipEl.setAttribute("data-sticky", "false");
+                document.body.appendChild(tooltipEl);
 
-        tooltipEl.style.opacity = 1;
-        tooltipEl.style.position = "absolute";
-        tooltipEl.style.left =
-            position.left + window.pageXOffset + tooltipModel.caretX + "px";
-        tooltipEl.style.top =
-            position.top + window.pageYOffset + tooltipModel.caretY + "px";
-        tooltipEl.style.font =
-            "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-        tooltipEl.style.fontSize = "12px"; // Smaller base font size
-        tooltipEl.style.padding = "10px"; // Slightly less padding
-        tooltipEl.style.pointerEvents = "auto";
-        tooltipEl.style.backgroundColor = "rgba(29, 53, 87, 0.95)"; // Dark to medium blue
-        tooltipEl.style.color = "#f2f2f2"; // Very light gray
-        tooltipEl.style.borderRadius = "10px"; // More rounded corners (increased from 6px)
-        tooltipEl.style.maxWidth = "500px";
-        tooltipEl.style.minWidth = "300px";
-        tooltipEl.style.zIndex = 1000;
-        tooltipEl.style.boxShadow = "0px 3px 15px rgba(0,0,0,0.3)";
-        tooltipEl.style.borderWidth = "6px"; // Increased from 3px to 6px
-        tooltipEl.style.borderStyle = "solid";
-        tooltipEl.style.borderColor = borderColor; // Use the dataset color
+                // Add mouse enter/leave events for the tooltip itself
+                tooltipEl.addEventListener("mouseenter", () => {
+                    // Only make sticky briefly to allow interaction with links
+                    tooltipEl.setAttribute("data-sticky", "true");
+
+                    // Set a timeout to automatically remove stickiness after 4 seconds
+                    if (tooltipEl.stickyTimeout) {
+                        clearTimeout(tooltipEl.stickyTimeout);
+                    }
+                    tooltipEl.stickyTimeout = setTimeout(() => {
+                        tooltipEl.setAttribute("data-sticky", "false");
+                        tooltipEl.style.opacity = 0;
+                    }, 4000);
+                });
+
+                tooltipEl.addEventListener("mouseleave", (event) => {
+                    // Always remove stickiness when mouse leaves tooltip
+                    tooltipEl.setAttribute("data-sticky", "false");
+
+                    // Clear any pending timeout
+                    if (tooltipEl.stickyTimeout) {
+                        clearTimeout(tooltipEl.stickyTimeout);
+                    }
+
+                    // Hide tooltip immediately when mouse leaves
+                    tooltipEl.style.opacity = 0;
+
+                    // Reset tooltip content when it hides to prevent link behaviors from lingering
+                    setTimeout(() => {
+                        if (tooltipEl.style.opacity === "0") {
+                            // Empty the tooltip content to prevent link behaviors from persisting
+                            const tableRoot = tooltipEl.querySelector("table");
+                            if (tableRoot) {
+                                tableRoot.innerHTML = "";
+                            }
+
+                            // Also reset any cursor changes
+                            document.body.style.cursor = "default";
+                        }
+                    }, 300); // Short delay to ensure tooltip is fully hidden
+                });
+            }
+            
+            // Set caret position
+            tooltipEl.classList.remove("above", "below", "no-transform");
+            if (tooltipModel.yAlign) {
+                tooltipEl.classList.add(tooltipModel.yAlign);
+            } else {
+                tooltipEl.classList.add("no-transform");
+            }
+            
+            // Update the tooltip content
+            const tableRoot = tooltipEl.querySelector("table");
+            tableRoot.innerHTML = innerHtml;
+            
+            // Add event listener to close button
+            const closeBtn = tooltipEl.querySelector(".tooltip-close");
+            if (closeBtn) {
+                // First remove any existing event listeners to avoid duplicates
+                closeBtn.replaceWith(closeBtn.cloneNode(true));
+
+                // Get the newly cloned button
+                const newCloseBtn = tooltipEl.querySelector(".tooltip-close");
+                newCloseBtn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    tooltipEl.style.opacity = 0;
+                    tooltipEl.setAttribute("data-sticky", "false");
+
+                    // Clear tooltip content to prevent lingering link behaviors
+                    setTimeout(() => {
+                        const tableRoot = tooltipEl.querySelector("table");
+                        if (tableRoot) {
+                            tableRoot.innerHTML = "";
+                        }
+                        // Reset cursor
+                        document.body.style.cursor = "default";
+                    }, 300);
+
+                    return false;
+                });
+            }
+            
+            // Position and style the tooltip
+            const position = context.chart.canvas.getBoundingClientRect();
+            
+            tooltipEl.style.opacity = 1;
+            tooltipEl.style.position = "absolute";
+            tooltipEl.style.left =
+                position.left + window.pageXOffset + tooltipModel.caretX + "px";
+            tooltipEl.style.top =
+                position.top + window.pageYOffset + tooltipModel.caretY + "px";
+            tooltipEl.style.font =
+                "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+            tooltipEl.style.fontSize = "12px"; // Smaller base font size
+            tooltipEl.style.padding = "10px"; // Slightly less padding
+            tooltipEl.style.pointerEvents = "auto";
+            tooltipEl.style.backgroundColor = "rgba(29, 53, 87, 0.95)"; // Dark to medium blue
+            tooltipEl.style.color = "#f2f2f2"; // Very light gray
+            tooltipEl.style.borderRadius = "10px"; // More rounded corners
+            tooltipEl.style.maxWidth = "550px";
+            tooltipEl.style.minWidth = "350px";
+            tooltipEl.style.zIndex = 20000; // Ensure highest z-index
+            tooltipEl.style.boxShadow = "0px 3px 15px rgba(0,0,0,0.3)";
+            tooltipEl.style.borderWidth = "6px";
+            tooltipEl.style.borderStyle = "solid";
+            tooltipEl.style.borderColor = borderColor; // Use the dataset color
+        }
     };
 
+    //var stepSize = getStepSizeForScreenWidth();
     const chartConfig = {
         type: "line",
         data: {
             datasets: [],
         },
         options: {
+            animation: false, // Disable animations
             responsive: true,
+            maintainAspectRatio: false, // Better control over dimensions
+            interaction: {
+                mode: "nearest", // More sensitive interaction mode
+                intersect: true, // Require direct intersection
+                axis: "xy", // Consider both axes for finding nearest element
+            },
+            // Add specific event handling for mobile devices
+            events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove', 'touchend'],
             plugins: {
                 title: {
                     display: true,
                     text: chartData.title,
                     font: {
-                        size: 20,
+                        size: 16, // Smaller title
                         weight: "bold",
                     },
                 },
@@ -383,8 +695,10 @@ function formatDataForChartJS(chartData) {
                     position: "top",
                     labels: {
                         usePointStyle: true,
+                        font: {
+                            size: 11,
+                        },
                         filter: function (item, chart) {
-                            // Logic to remove a particular legend item goes here
                             return !item.text.includes("REMOVE!");
                         },
                     },
@@ -392,6 +706,9 @@ function formatDataForChartJS(chartData) {
                 tooltip: {
                     enabled: false, // Disable the built-in tooltips
                     external: externalTooltipHandler, // Use our custom tooltip handler
+                    mode: "nearest", // Show tooltip for nearest point
+                    intersect: true, // Require direct intersection
+                    axis: "xy", // Consider both axes for nearest point
                     callbacks: {
                         // Title callback still used by external handler
                         title: function (tooltipItems) {
@@ -400,9 +717,27 @@ function formatDataForChartJS(chartData) {
                             const dataset =
                                 tooltipItems[0].chart.data.datasets[datasetIndex];
 
-                            // Skip if this is a trend line dataset (not a scatter)
-                            if (dataset.type !== "scatter") {
-                                return "";
+                            // Special handling for trend line datasets (they are even-indexed)
+                            if (datasetIndex % 2 === 0) {
+                                // This is a trend line - show data for all lines at this x-value
+                                // Get the actual point coordinates
+                                const dataPoint = dataset.data[index];
+                                if (!dataPoint) return "";
+
+                                // Format x value with no decimal places
+                                const xValue = parseFloat(dataPoint.x).toFixed(0);
+
+                                // Main header for tooltip - show point margin
+                                let tooltipHeader = `Points Behind: ${xValue}`;
+
+                                // Check if we have pre-calculated data for this point margin
+                                if (pointMarginData[xValue]) {
+                                    // We'll return only the header - the actual line data will be shown in the tooltip body
+                                    return tooltipHeader;
+                                }
+
+                                // Fallback if point margin data not found
+                                return `Points Behind: ${xValue}`;
                             }
 
                             // Find the corresponding line index
@@ -433,12 +768,14 @@ function formatDataForChartJS(chartData) {
                                       ).toFixed(2)
                                     : "0.00";
 
-                            // Format win statistics with new win percentage
-                            return `Wins: ${pointData.win_count}/${
+                            // Format win statistics with new header format
+                            return `${pointData.point_margin}: Wins ${
+                                pointData.win_count
+                            }/${
                                 pointData.total_count
-                            } | Win Percent ${winPercent}% | Deficit Frequency: ${(
+                            } | Win %= ${winPercent} | Deficit %= ${(
                                 pointData.point_margin_percent * 100
-                            ).toFixed(2)}%`;
+                            ).toFixed(2)}`;
                         },
                     },
                 },
@@ -447,14 +784,23 @@ function formatDataForChartJS(chartData) {
             scales: {
                 x0: {
                     type: "linear",
-                    min: Math.min(...chartData.x_ticks),
-                    max: Math.max(...chartData.x_ticks),
+                    // Use the min/max from the chart data, but with some padding
+                    min: chartData.min_x - 1,
+                    max: chartData.max_x + 1,
+                    title: {
+                        display: true,
+                        text: chartData.x_label,
+                    },
                     ticks: {
-                        stepSize: 2,
+                        // Set stepSize based on screen width
+                        stepSize: 1,
+                        // autoSkip: false,
                         font: {
                             size: 12,
                         },
                         color: "black",
+                        maxRotation: 45,
+                        minRotation: 45,
                     },
                     grid: {
                         display: true,
@@ -464,36 +810,35 @@ function formatDataForChartJS(chartData) {
                         color: "rgba(147, 149, 149, 0.25)",
                     },
                     // Use exact values from y_ticks for the axis
-                    afterBuildTicks: function (axis) {
-                        axis.chart.scales.x1.min = axis.min;
-                        axis.chart.scales.x1.max = axis.max;
-                        axis.chart.scales.x1.ticks = axis.ticks;
-                    },
-                },
-                x1: {
-                    type: "linear",
-                    position: "top",
-                    // ticks: {
-                    //     //min: Math.min(...chartData.x_ticks) - 2,
-                    //     //max: Math.max(...chartData.x_ticks) + 2,
-                    //     stepSize: 1,
-                    //     font: {
-                    //         size: 12,
-                    //     },
-                    //     color: "black",
-                    // },
-                    // grid: {
-                    //     display: true,
-                    //     drawOnChartArea: true,
-                    //     drawTicks: true,
-                    //     lineWidth: 2,
-                    //     color: "rgba(147, 149, 149, 0.25)",
+                    // afterBuildTicks: function (axis) {
+                    //     axis.chart.scales.x1.min = axis.min;
+                    //     axis.chart.scales.x1.max = axis.max;
+                    //     axis.chart.scales.x1.ticks = axis.ticks;
                     // },
                 },
+                // x1: {
+                //     type: "linear",
+                //     position: "top",
+                //     ticks: {
+                //         // Set stepSize based on screen width (same as x0)
+                //         stepSize: stepSize,
+                //         autoSkip: false,
+                //         maxRotation: 45,
+                //         minRotation: 45,
+                //     },
+                // },
                 y: {
                     type: "linear",
                     min: Math.min(...chartData.y_ticks) - 0.2,
                     max: Math.max(...chartData.y_ticks) + 0.2,
+                    title: {
+                        display: true,
+                        text: chartData.y_label,
+                        font: {
+                            size: 14,
+                            weight: "bold",
+                        },
+                    },
                     ticks: {
                         font: {
                             size: 12,
@@ -508,10 +853,6 @@ function formatDataForChartJS(chartData) {
                         drawTicks: true,
                         lineWidth: 2,
                         color: "rgba(147, 149, 149, 0.25)",
-                        // Only draw grid lines at the y_ticks values
-                        // callback: function (value) {
-                        //     return chartData.y_ticks.includes(value);
-                        // },
                     },
                     // Use exact values from y_ticks for the axis
                     afterBuildTicks: function (axis) {
@@ -525,6 +866,13 @@ function formatDataForChartJS(chartData) {
                 },
                 y1: {
                     position: "right",
+                    title: {
+                        display: true,
+                        font: {
+                            size: 14,
+                            weight: "bold",
+                        },
+                    },
                     afterBuildTicks: (axis) => {
                         axis.ticks = [...axis.chart.scales.y.ticks];
                         axis.min = axis.chart.scales.y.min;
@@ -546,15 +894,7 @@ function formatDataForChartJS(chartData) {
 
     // Add datasets for each line
     if (chartData.lines) {
-        const colors = [
-            "rgba(58, 129, 210, 0.5)", // Blue
-            "rgba(255, 160, 64, 0.5)", // Orange
-            "rgba(255, 99, 132, 0.5)", // Red
-            "rgba(255, 206, 86, 0.5)", // Yellow
-            "rgba(75, 192, 192, 0.5)", // Green
-            "rgba(153, 102, 255, 0.5)", // Purple
-            "rgba(199, 199, 199, 0.5)", // Gray
-        ];
+        const colors = getColorWheel(0.5);
 
         chartData.lines.forEach((line, index) => {
             const color = colors[index % colors.length];
@@ -563,25 +903,76 @@ function formatDataForChartJS(chartData) {
             // 1. A line representing the trend line based on m and b
             // 2. Individual points for the sigma values
 
-            // 1. Create trend line dataset using y = mx + b
-            let trendlineData = [];
-            // Sort point margins to ensure the line is drawn correctly
-            const sortedMargins = [...line.point_margins].sort((a, b) => a - b);
-            sortedMargins.forEach((margin) => {
+            // 1. Create trend line dataset using y = mx + b with x_min/x_max from chart data
+            const trendlineData = [];
+
+            // Calculate the minimum x value where y won't go below min(y_ticks)
+            const minYValue = Math.min(...chartData.y_ticks);
+            // Solve for x: minYValue = m*x + b => x = (minYValue - b) / m
+            const minAllowedX = (minYValue - line.b) / line.m;
+
+            // Adjust min_x to ensure we don't plot y values below min(y_ticks)
+            const adjustedMinX = Math.max(chartData.min_x, Math.ceil(minAllowedX));
+            const adjustedMaxX = chartData.max_x;
+
+            // Create a point at every integer x-coordinate from adjustedMinX to adjustedMaxX
+            for (
+                let x = Math.ceil(adjustedMinX);
+                x <= Math.floor(adjustedMaxX);
+                x += 1
+            ) {
                 trendlineData.push({
-                    x: margin,
-                    y: line.m * margin + line.b,
+                    x: x,
+                    y: line.m * x + line.b,
                 });
-            });
+            }
+
+            // Always ensure the last point is exactly at max_x if it's not an integer
+            if (adjustedMaxX % 1 !== 0) {
+                trendlineData.push({
+                    x: adjustedMaxX,
+                    y: line.m * adjustedMaxX + line.b,
+                });
+            }
+
+            // Always ensure the first point is exactly at min_x if it's not an integer
+            if (adjustedMinX % 1 !== 0) {
+                trendlineData.unshift({
+                    x: adjustedMinX,
+                    y: line.m * adjustedMinX + line.b,
+                });
+            }
 
             // Add the trend line dataset
             chartConfig.data.datasets.push({
                 data: trendlineData,
+                type: "line", // Explicitly set type
                 borderColor: color,
                 backgroundColor: "transparent",
                 borderWidth: 5,
-                pointRadius: 0, // No points on the line
+                pointRadius: 4, // Increased for better interaction target
+                pointHoverRadius: 10, // Increased hover radius for easier hitting
+                pointStyle: "circle", // Round points
+                pointBackgroundColor: color,
+                pointBorderColor: color, // Same color as the point to remove white border
+                pointBorderWidth: 0, // No border
+                hoverBorderWidth: 2,
                 label: "REMOVE!",
+                // Store the r_value in the dataset for tooltip access
+                r_value: line.r_value,
+                // Make the line interactive but only on the points
+                tension: 0, // Straight line
+                spanGaps: false,
+                // Additional interactive options
+                hoverBackgroundColor: color,
+                hoverBorderColor: color, // Match the line color for border
+                // Hover behavior for regression lines
+                interaction: {
+                    mode: "nearest",
+                    intersect: true, // Require direct intersection
+                    axis: "xy",
+                },
+                hitRadius: 20, // Added a large hit radius to make hovering easier
             });
 
             // 2. Add scatter points for sigma values
@@ -602,10 +993,17 @@ function formatDataForChartJS(chartData) {
                 borderColor: color,
                 backgroundColor: color.replace("0.5", "0.7"),
                 pointStyle: "rectRounded",
-                pointRadius: 11, // Increased from 10 to 12
-                pointHoverRadius: 13, // Increased from 12 to 14
+                pointRadius: 8, // Size of scatter points
+                pointHoverRadius: 12, // Larger hover radius
                 showLine: false, // Ensure no line is drawn
                 label: line.legend,
+                // Hover behavior for scatter points
+                interaction: {
+                    mode: "nearest",
+                    intersect: true, // Require direct intersection
+                    axis: "xy",
+                },
+                hitRadius: 15, // Added hit radius to make hover detection area larger
             });
         });
     }
@@ -613,18 +1011,26 @@ function formatDataForChartJS(chartData) {
     return chartConfig;
 }
 
-/**
- * Creates a Chart.js chart from JSON data
- * @param {string} canvasId - The ID of the canvas element where the chart will be rendered
- * @param {object} chartData - The JSON data for the chart
- * @returns {Chart} The created Chart.js instance
- */
-function createChartJSChart(canvasId, chartConfig) {
-    const canvas = document.getElementById(canvasId);
+// Helper function to determine step size based on screen width
+function getStepSizeForScreenWidth() {
+    // Check if mobile first using our new utility function
+    if (isMobile()) {
+        return 5; // Larger steps for mobile devices
+    }
 
-    // Create the chart
-    const chart = new Chart(canvas, chartConfig);
-    return chart;
+    // For non-mobile, check screen width for more granular control
+    const width =
+        window.innerWidth ||
+        document.documentElement.clientWidth ||
+        document.body.clientWidth;
+
+    if (width < 400) {
+        return 5; // Larger steps for very small screens
+    } else if (width < 700) {
+        return 2; // Medium steps for medium screens
+    } else {
+        return 1; // Small steps for large screens
+    }
 }
 
 // Add this CSS to style the tooltip links and make them clickable
@@ -639,6 +1045,7 @@ document.addEventListener("DOMContentLoaded", function () {
             font-size: 12px;
             border: 6px solid transparent; /* Increased from 3px to 6px */
             transition: border-color 0.2s ease-in-out;
+            z-index: 20000; /* Highest z-index to ensure tooltip is above everything */
         }
         #chartjs-tooltip a {
             cursor: pointer;
@@ -647,44 +1054,354 @@ document.addEventListener("DOMContentLoaded", function () {
             padding: 1px 0;
             color: #78c6ff;
             transition: all 0.2s ease;
+            position: relative; /* Ensure proper stacking context */
+            z-index: 20001; /* Even higher z-index for links within tooltips */
         }
         #chartjs-tooltip a:hover {
             background-color: rgba(255, 255, 255, 0.08);
             color: #a8daff;
         }
-        #chartjs-tooltip table {
+        
+        /* Mobile tooltip lightbox styles */
+        .nba-mobile-tooltip-lightbox {
+            background-color: rgba(25, 25, 35, 0.95) !important; /* Dark background */
+            z-index: 30000 !important; /* Even higher z-index for mobile tooltips */
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            touch-action: auto !important; /* Enable touch scrolling */
+            cursor: auto !important; /* Ensure text can be selected */
+            position: fixed !important; /* For iOS */
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+        }
+        .mobile-tooltip-lightbox {
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto; /* Allow scrolling for long content */
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+            padding: 15px !important;
+            background-color: rgba(29, 53, 87, 0.98) !important; /* Dark blue background */
+            box-shadow: 0 0 20px rgba(0,0,0,0.5) !important;
+            border-radius: 10px !important;
+        }
+        .mobile-tooltip-inner {
+            padding: 10px;
+        }
+        .mobile-tooltip-lightbox a {
+            cursor: pointer;
+            display: block;
             width: 100%;
-            border-collapse: collapse;
-            border-spacing: 0;
+            padding: 8px 4px; /* Larger padding for touch targets */
+            color: #78c6ff;
+            transition: all 0.2s ease;
+            font-size: 16px; /* Larger for touch targets */
+            border-radius: 4px;
+            margin: 2px 0;
         }
-        #chartjs-tooltip td {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 470px; /* Allow for some padding */
-            line-height: 1.1;
-            font-size: 12px;
-            padding: 1px 0;
+        .mobile-tooltip-lightbox a:hover,
+        .mobile-tooltip-lightbox a:active {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: #a8daff;
         }
-        #chartjs-tooltip th {
-            padding: 3px 4px;
-            font-size: 13px;
+        .mobile-tooltip-lightbox .tooltip-close {
+            width: 36px !important;
+            height: 36px !important;
+            line-height: 36px !important;
+            font-size: 20px !important;
+            background-color: rgba(255, 255, 255, 0.3) !important;
         }
-        #chartjs-tooltip th, #chartjs-tooltip td {
-            color: #f2f2f2;
+        .mobile-explicit-close {
+            appearance: none;
+            border: none;
+            background-color: #3a81d2 !important;
+            color: white !important;
+            padding: 12px 25px !important;
+            font-size: 16px !important;
+            border-radius: 6px !important;
+            margin: 15px auto 5px !important;
+            cursor: pointer !important;
+            display: block !important;
+            font-weight: bold !important;
+            box-shadow: 0px 2px 5px rgba(0,0,0,0.2) !important;
         }
-        #chartjs-tooltip b {
-            color: #ffffff;
-            font-size: 12px;
+        
+        /* Position Reset Zoom button but keep it below tooltips */
+        .chart-btn.reset-zoom-btn {
+            position: relative;
+            z-index: 10000; 
         }
-        .tooltip-close {
-            opacity: 0.7;
+        .chart-btn {
+            margin: 0 2px; /* Reduced from 5px to 2px for tighter spacing */
+            padding: 6px 12px;
+            background-color: #f8f9fa;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
             transition: all 0.2s ease;
         }
-        .tooltip-close:hover {
-            background: rgba(255,255,255,0.25) !important;
-            opacity: 1;
+        .chart-btn:hover {
+            background-color: #e9ecef;
+        }
+        /* Add styling for the chart-buttons container to ensure flex display */
+        .chart-buttons {
+            display: flex;
+            margin: 0;
+            padding: 0;
         }
     `;
     document.head.appendChild(style);
 });
+
+// Function to make buttons stay in position during zoom
+function updateButtonPositions(chart) {
+    const chartId = chart.canvas.id.replace("-canvas", "");
+    const buttonContainer = document.querySelector(
+        `#${chartId} .chart-container .chart-buttons`
+    );
+
+    if (buttonContainer && chart.chartArea) {
+        // Ensure the buttons are visible
+        buttonContainer.style.display = "flex";
+
+        // Most important: position relative to the actual chart area
+        const chartArea = chart.chartArea;
+
+        // Important: get the positioning relative to the chart area, not the container
+        // Calculate where to place buttons based on the actual chart area coordinates
+        const distanceFromBottom = 20; // Set to 20px
+
+        // Convert chart area coordinates to container coordinates
+        // Calculate bottom position in pixels from the bottom of the container
+        const bottomPosition = chart.height - chartArea.bottom + distanceFromBottom;
+
+        // Set position relative to the actual chart (this is crucial)
+        buttonContainer.style.position = "absolute";
+        buttonContainer.style.bottom = `${bottomPosition}px`;
+        buttonContainer.style.right = "90px"; // Keep consistent right position
+
+        // Make buttons visible with a smooth transition once positioned
+        buttonContainer.style.opacity = "0.85"; // Ensure consistent opacity during zoom
+        buttonContainer.style.transition = "opacity 0.05s ease";
+
+        // For debugging purposes only - add data attributes to see what's happening
+        buttonContainer.dataset.chartAreaBottom = chartArea.bottom;
+        buttonContainer.dataset.chartHeight = chart.height;
+        buttonContainer.dataset.calculatedBottom = bottomPosition;
+    }
+}
+
+/**
+ * Creates a Chart.js chart from JSON data
+ * @param {string} canvasId - The ID of the canvas element where the chart will be rendered
+ * @param {object} chartData - The JSON data for the chart
+ * @returns {Chart} The created Chart.js instance
+ */
+function createChartJSChart(canvasId, chartConfig) {
+    const canvas = document.getElementById(canvasId);
+
+    // Create the chart
+    const chart = new Chart(canvas, chartConfig);
+
+    // Add buttons to chart area after initialization
+    addControlsToChartArea(canvas, chart);
+
+    return chart;
+}
+
+const fullscreenContent =
+    '<div id="lightbox-chart-container" class="lightbox-chart"></div>';
+var lightboxInstance = basicLightbox.create(fullscreenContent, {
+    closable: false,
+    className: "nba-fullscreen-lightbox", // Add custom class for styling
+});
+
+// Create content div for mobile tooltips
+const mobileTooltipContent =
+    '<div id="mobile-tooltip-container" class="mobile-tooltip-lightbox"><div class="mobile-tooltip-inner"></div></div>';
+// Create BasicLightbox instance for mobile tooltips with a visible close button
+var mobileTooltipLightbox = basicLightbox.create(mobileTooltipContent, {
+    closable: true,
+    className: "nba-mobile-tooltip-lightbox",
+    onShow: (instance) => {
+        // Log that lightbox is visible (for debugging)
+        console.log("Mobile tooltip lightbox shown");
+        
+        // Add a visible close button at the top corner for iOS
+        const container = document.getElementById("mobile-tooltip-container");
+        if (container) {
+            // Make sure container is visible
+            container.style.display = "block";
+        }
+        
+        // Prevent body scrolling
+        document.body.style.overflow = "hidden";
+        
+        // Return true to allow the lightbox to show
+        return true;
+    },
+    onClose: () => {
+        // Re-enable body scrolling
+        document.body.style.overflow = "";
+        console.log("Mobile tooltip lightbox closed");
+        return true;
+    }
+});
+
+// Function to create and add controls to the chart area
+function addControlsToChartArea(canvas, chart) {
+    // Create button container
+    const buttonContainer = document.createElement("div");
+    buttonContainer.className = "chart-buttons";
+    buttonContainer.style.position = "absolute"; // Ensure absolute positioning
+    buttonContainer.style.opacity = "0"; // Start invisible to avoid flashing
+    buttonContainer.style.display = "flex"; // Ensure flex display
+    buttonContainer.style.margin = "0"; // No margin
+    buttonContainer.style.padding = "0"; // No padding
+
+    // Only add Full Screen button if not on mobile
+    if (!isMobile()) {
+        // Add Full Screen button with icon
+        const fullScreenButton = document.createElement("button");
+        fullScreenButton.className = "chart-btn full-screen-btn";
+        fullScreenButton.title = "Full Screen"; // Standard title
+        fullScreenButton.setAttribute("aria-label", "Full Screen"); // Accessibility
+        fullScreenButton.setAttribute("data-tooltip", "Full Screen"); // Custom tooltip
+        fullScreenButton.innerHTML = '<i class="chart-icon full-screen-icon"></i>';
+        fullScreenButton.setAttribute("data-fullscreen", "false"); // Track state
+
+        function fullscreen(event) {
+            chartJsToolTipClearer(event);
+            // Show lightbox
+            lightboxInstance.show();
+
+            // Going into fullscreen mode
+            const lightboxContent = document.getElementById("lightbox-chart-container");
+
+            // Store original parent before moving
+            var mainChartDiv = chart.canvas.parentElement.parentElement.parentElement;
+            chart.mainChartDiv = mainChartDiv;
+
+            // Store original dimensions to restore them later
+            const chartContainer = chart.canvas.parentElement;
+            chart.originalWidth = chartContainer.style.width;
+            chart.originalHeight = chartContainer.style.height;
+            chart.originalMaxWidth = chartContainer.style.maxWidth;
+            chart.originalMaxHeight = chartContainer.style.maxHeight;
+
+            // Move the canvas to lightbox
+            var parentChartDiv = chart.canvas.parentElement.parentElement;
+            chart.parentChartDiv = parentChartDiv;
+            lightboxContent.appendChild(parentChartDiv);
+
+            // Set fullscreen dimensions
+            chartContainer.style.width = "95%";
+            chartContainer.style.height = "90vh";
+            chartContainer.style.maxWidth = "95%";
+            chartContainer.style.maxHeight = "90vh";
+
+            // Resize chart to fit new container
+            chart.resize();
+
+            // Update button state
+            fullScreenButton.innerHTML =
+                '<i class="chart-icon exit-full-screen-icon"></i>';
+            fullScreenButton.setAttribute("data-tooltip", "Exit Full Screen");
+            fullScreenButton.setAttribute("data-fullscreen", "true");
+            fullScreenButton.onclick = exitFullScreen;
+        }
+
+        function exitFullScreen(event) {
+            chartJsToolTipClearer(event);
+
+            // Close lightbox
+            fullScreenButton.innerHTML = '<i class="chart-icon full-screen-icon"></i>';
+            fullScreenButton.setAttribute("data-tooltip", "Full Screen");
+            fullScreenButton.setAttribute("data-fullscreen", "false");
+            fullScreenButton.onclick = fullscreen;
+            lightboxInstance.close();
+
+            // Restore chart to original parent
+            chart.mainChartDiv.appendChild(chart.parentChartDiv);
+
+            // Restore original dimensions
+            const chartContainer = chart.canvas.parentElement;
+            chartContainer.style.width = chart.originalWidth || "";
+            chartContainer.style.height = chart.originalHeight || "";
+            chartContainer.style.maxWidth = chart.originalMaxWidth || "";
+            chartContainer.style.maxHeight = chart.originalMaxHeight || "";
+
+            // Resize chart to fit original container
+            chart.resize();
+        }
+
+        fullScreenButton.onclick = fullscreen;
+
+        // Setup ESC key handler
+        const handleEscKey = function (e) {
+            if (e.key === "Escape" && lightboxInstance) {
+                exitFullScreen(e);
+                document.removeEventListener("keydown", handleEscKey);
+            }
+        };
+
+        document.addEventListener("keydown", handleEscKey);
+
+        buttonContainer.appendChild(fullScreenButton);
+    }
+
+    // Add Reset Zoom button with icon
+    const resetButton = document.createElement("button");
+    resetButton.className = "chart-btn reset-zoom-btn";
+    resetButton.title = "Reset Zoom"; // Standard title (may be hidden by some browsers/CSS)
+    resetButton.setAttribute("aria-label", "Reset Zoom"); // Accessibility
+    resetButton.setAttribute("data-tooltip", "Reset Zoom"); // Custom tooltip
+    resetButton.innerHTML = '<i class="chart-icon zoom-reset-icon"></i>';
+    resetButton.onclick = function (event) {
+        // Prevent default to ensure no link behaviors interfere
+        chartJsToolTipClearer(event);
+        // Reset zoom
+        chart.resetZoom();
+        return false;
+    };
+    buttonContainer.appendChild(resetButton);
+
+    // Add Save As PNG button with icon
+    const saveButton = document.createElement("button");
+    saveButton.className = "chart-btn save-png-btn";
+    saveButton.title = "Save as PNG"; // Standard title (may be hidden by some browsers/CSS)
+    saveButton.setAttribute("aria-label", "Save as PNG"); // Accessibility
+    saveButton.setAttribute("data-tooltip", "Save as PNG"); // Custom tooltip
+    saveButton.innerHTML = '<i class="chart-icon save-png-icon"></i>';
+    saveButton.onclick = function (event) {
+        // Prevent default to ensure no link behaviors interfere
+        chartJsToolTipClearer(event);
+        // Get chart ID from canvas ID and save the chart
+        const chartId = canvas.id.replace("-canvas", "");
+        saveChart(canvas);
+        return false;
+    };
+    buttonContainer.appendChild(saveButton);
+
+    // Add the button container to the chart container
+    const chartContainer = canvas.parentElement;
+    chartContainer.appendChild(buttonContainer);
+
+    // Set an initial position - will be corrected by updateButtonPositions
+    buttonContainer.style.position = "absolute";
+    buttonContainer.style.bottom = "30px"; // Just a placeholder, updateButtonPositions will set the proper value
+    buttonContainer.style.right = "90px";
+    // Don't set display:flex or opacity yet - wait until updateButtonPositions is called
+
+    updateButtonPositions(chart);
+
+    // Also update button positions whenever the window is resized
+    window.addEventListener("resize", () => {
+        updateButtonPositions(chart);
+    });
+}
