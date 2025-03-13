@@ -1015,9 +1015,9 @@ function updateButtonPositions(chart) {
         buttonContainer.style.bottom = `${bottomPosition}px`;
         
         // Adjust the right position based on device type and whether fullscreen is enabled
-        // On mobile, we need to move buttons more to the right since fullscreen button is hidden
+        // On mobile, position is different since we only have the save button
         if (isMobile()) {
-            buttonContainer.style.right = "20px"; // Position closer to the right on mobile
+            buttonContainer.style.right = "30px"; // Not too far right on mobile
         } else {
             buttonContainer.style.right = "90px"; // Standard position for desktop
         }
@@ -1160,21 +1160,23 @@ function addControlsToChartArea(canvas, chart) {
         buttonContainer.appendChild(fullScreenButton);
     }
 
-    // Add Reset Zoom button with icon
-    const resetButton = document.createElement("button");
-    resetButton.className = "chart-btn reset-zoom-btn";
-    resetButton.title = "Reset Zoom"; // Standard title (may be hidden by some browsers/CSS)
-    resetButton.setAttribute("aria-label", "Reset Zoom"); // Accessibility
-    resetButton.setAttribute("data-tooltip", "Reset Zoom"); // Custom tooltip
-    resetButton.innerHTML = '<i class="chart-icon zoom-reset-icon"></i>';
-    resetButton.onclick = function (event) {
-        // Prevent default to ensure no link behaviors interfere
-        chartJsToolTipClearer(event);
-        // Reset zoom
-        chart.resetZoom();
-        return false;
-    };
-    buttonContainer.appendChild(resetButton);
+    // Add Reset Zoom button with icon - only for non-mobile
+    if (!isMobile()) {
+        const resetButton = document.createElement("button");
+        resetButton.className = "chart-btn reset-zoom-btn";
+        resetButton.title = "Reset Zoom"; // Standard title (may be hidden by some browsers/CSS)
+        resetButton.setAttribute("aria-label", "Reset Zoom"); // Accessibility
+        resetButton.setAttribute("data-tooltip", "Reset Zoom"); // Custom tooltip
+        resetButton.innerHTML = '<i class="chart-icon zoom-reset-icon"></i>';
+        resetButton.onclick = function (event) {
+            // Prevent default to ensure no link behaviors interfere
+            chartJsToolTipClearer(event);
+            // Reset zoom
+            chart.resetZoom();
+            return false;
+        };
+        buttonContainer.appendChild(resetButton);
+    }
 
     // Add Save As PNG button with icon
     const saveButton = document.createElement("button");
@@ -1203,7 +1205,7 @@ function addControlsToChartArea(canvas, chart) {
     
     // Set the initial right position based on device type
     if (isMobile()) {
-        buttonContainer.style.right = "20px"; // Position closer to the right on mobile
+        buttonContainer.style.right = "30px"; // Not too far right on mobile
     } else {
         buttonContainer.style.right = "90px"; // Standard position for desktop
     }
