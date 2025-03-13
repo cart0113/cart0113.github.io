@@ -1323,6 +1323,10 @@ function addControlsToChartArea(canvas, chart) {
 
         // Re-enable page scrolling
         document.body.style.overflow = "";
+        
+        // Reset zoom before exiting fullscreen - this is important to ensure 
+        // we don't return to normal view with a zoomed chart
+        chart.resetZoom();
 
         // If on mobile, disable zooming and remove reset zoom button before restoring
         if (isMobile() && chart.options.plugins && chart.options.plugins.zoom) {

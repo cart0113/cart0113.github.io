@@ -25,7 +25,7 @@
 When you see "Add the important comment X", it means to add a comment in the code and also add it to this section for future reference.
 
 - **CHART_BACKGROUND_COLOR**: Chart plot area background color and opacity setting in plotBackgroundPlugin
-- **FULL_SCREEN_FUNCTIONS**: Full screen and exit full screen functionality for all devices including mobile; disables page scrolling while in full screen mode; on mobile: enables zooming, adds reset zoom button, and shows win count numbers during full screen mode
+- **FULL_SCREEN_FUNCTIONS**: Full screen and exit full screen functionality for all devices including mobile; disables page scrolling while in full screen mode; on mobile: enables zooming, adds reset zoom button, and shows smaller win count numbers during full screen mode; automatically resets zoom when exiting full screen
 
 ## Architecture
 
