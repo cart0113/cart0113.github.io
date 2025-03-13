@@ -20,6 +20,10 @@
 - **CSS**: Keep styles in `css/nbacc.css` with descriptive class names
 - **HTML**: Use semantic elements, consistent ID naming with `nbacc_` prefix
 
+## Important Sections
+
+- **CHART_BACKGROUND_COLOR**: Chart plot area background color and opacity setting in plotBackgroundPlugin
+
 ## Architecture
 
 - Pure vanilla JavaScript without frameworks

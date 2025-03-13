@@ -68,9 +68,9 @@ const plotBackgroundPlugin = {
         if (!chartArea) {
             return;
         }
-        // Draw a lighter background rectangle
+        // CHART_BACKGROUND_COLOR - Controls the background color and opacity of the plot area
         ctx.save();
-        ctx.fillStyle = "rgba(126, 126, 126, 0.1)"; // Reduced opacity from 0.2 to 0.1
+        ctx.fillStyle = "rgba(0, 0, 0, 0.0)"; // Even lighter background - reduced opacity to 0.05
         ctx.fillRect(chartArea.left, chartArea.top, chartArea.width, chartArea.height);
 
         // Add border around the rectangle - also lighter
@@ -574,37 +574,67 @@ function formatDataForChartJS(chartData) {
         const tooltipWidth = tooltipEl.offsetWidth;
         const tooltipHeight = tooltipEl.offsetHeight;
         
-        // Get viewport dimensions
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
+        // Get viewport dimensions - handle different browser implementations
+        // Some Android browsers may handle viewport measurements differently
+        const viewportWidth = Math.min(window.innerWidth, document.documentElement.clientWidth);
+        const viewportHeight = Math.min(window.innerHeight, document.documentElement.clientHeight);
         
-        // Set padding from screen edges
-        const screenPadding = 5;
+        // Use larger padding on Android for safety
+        const isAndroid = /Android/i.test(navigator.userAgent);
+        const screenPadding = isAndroid ? 15 : 5;
         
-        // Horizontal adjustment - simplified and more precise
-        // Check if tooltip would extend beyond right edge of screen
-        if (left + tooltipWidth > viewportWidth - screenPadding) {
-            // Move left only enough to make the tooltip fully visible within the viewport
-            // This precise calculation ensures we move exactly the amount needed
-            left = Math.max(screenPadding, viewportWidth - tooltipWidth - screenPadding);
-        } 
-        // Check if tooltip would extend beyond left edge of screen
-        else if (left < screenPadding) {
-            // If tooltip would go off left edge, place it at the screen padding
-            left = screenPadding;
-        }
-        
-        // Extra check for very narrow screens where the tooltip is wider than the viewport
-        if (tooltipWidth > viewportWidth - (2 * screenPadding)) {
-            // In this extreme case, center the tooltip
-            left = Math.max(screenPadding, (viewportWidth - tooltipWidth) / 2);
+        // Special handling for Android - be more aggressive with horizontal positioning
+        if (isAndroid) {
+            // For Android devices, ensure the tooltip fits within the visible area with more margin
+            // This accounts for potential inaccuracies in viewport measurement on some Android browsers
+            const safeWidth = viewportWidth - (2 * screenPadding);
+            
+            if (tooltipWidth >= safeWidth) {
+                // If tooltip is nearly as wide as the viewport, center it
+                left = Math.max(screenPadding, (viewportWidth - tooltipWidth) / 2);
+            } else {
+                // Otherwise ensure it's fully visible (with extra caution for Android)
+                const rightEdge = left + tooltipWidth;
+                if (rightEdge > viewportWidth - screenPadding) {
+                    // Shift further left on Android to ensure visibility
+                    left = Math.max(screenPadding, viewportWidth - tooltipWidth - screenPadding * 2);
+                }
+                
+                // Ensure not too far left
+                if (left < screenPadding) {
+                    left = screenPadding;
+                }
+            }
+        } else {
+            // Standard positioning for non-Android devices
+            // Check if tooltip would extend beyond right edge of screen
+            if (left + tooltipWidth > viewportWidth - screenPadding) {
+                // Move left only enough to make the tooltip fully visible within the viewport
+                // This precise calculation ensures we move exactly the amount needed
+                left = Math.max(screenPadding, viewportWidth - tooltipWidth - screenPadding);
+            } 
+            // Check if tooltip would extend beyond left edge of screen
+            else if (left < screenPadding) {
+                // If tooltip would go off left edge, place it at the screen padding
+                left = screenPadding;
+            }
+            
+            // Extra check for very narrow screens where the tooltip is wider than the viewport
+            if (tooltipWidth > viewportWidth - (2 * screenPadding)) {
+                // In this extreme case, center the tooltip
+                left = Math.max(screenPadding, (viewportWidth - tooltipWidth) / 2);
+            }
         }
         
         // Get the screen's total available vertical space, accounting for scrolling
-        const totalScreenHeight = window.innerHeight;
+        // Use the more reliable measurement we already set above
+        const totalScreenHeight = viewportHeight;
+        
+        // Additional adjustment for Android devices
+        const androidAdjustment = isAndroid ? 30 : 0; // Extra space for Android
         
         // Vertical adjustment - ONLY if the tooltip would actually extend beyond the bottom of the screen
-        const tooltipBottom = top + tooltipHeight;
+        const tooltipBottom = top + tooltipHeight + androidAdjustment;
         const screenBottom = window.pageYOffset + totalScreenHeight - screenPadding;
         
         if (tooltipBottom > screenBottom) {
