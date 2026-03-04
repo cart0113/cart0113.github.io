@@ -401,9 +401,8 @@ body::before {
 <body>
 
 <header class="masthead">
-  <p class="masthead-publication">Grand Forks Herald</p>
   <h1 class="masthead-title">Duane Christenson</h1>
-  <p class="masthead-subtitle">A collection of articles &amp; appearances</p>
+  <p class="masthead-subtitle">A collection of articles &amp; appearances in the Grand Forks Herald</p>
   <span class="masthead-rule"></span>
   <p class="article-count" id="articleCount"></p>
 </header>
@@ -442,71 +441,49 @@ body::before {
 <script src="manifest.js"></script>
 <script>
 (function() {
-  const DAYS_OF_WEEK = ['sun','mon','tue','wed','thu','fri','sat'];
-  const MONTHS = {
-    jan:0, feb:1, mar:2, apr:3, may:4, jun:5,
-    jul:6, aug:7, sep:8, oct:9, nov:10, dec:11
-  };
+  var DAYS_OF_WEEK = ['sun','mon','tue','wed','thu','fri','sat'];
+  var MONTHS = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
 
   function parseSimpleYaml(text) {
-    const notes = {};
+    var notes = {};
     text.split('\n').forEach(function(line) {
       line = line.trim();
       if (!line || line.startsWith('#')) return;
-      const colon = line.indexOf(':');
+      var colon = line.indexOf(':');
       if (colon < 0) return;
-      const key = line.slice(0, colon).trim();
-      let val = line.slice(colon + 1).trim();
+      var key = line.slice(0, colon).trim();
+      var val = line.slice(colon + 1).trim();
       if ((val.startsWith('"') && val.endsWith('"')) ||
-          (val.startsWith("'") && val.endsWith("'"))) {
+          (val.startsWith("'") && val.endsWith("'")))
         val = val.slice(1, -1);
-      }
       notes[key] = val;
     });
     return notes;
   }
 
   function parseFilename(filename) {
-    const base = filename.replace(/\.jpg$/i, '');
-    const parts = base.split('_');
-
-    const year = parseInt(parts[parts.length - 1]);
-    const day = parseInt(parts[parts.length - 2]);
-    let monthRaw = parts[parts.length - 3].toLowerCase();
-    const dow = parts[parts.length - 4].toLowerCase();
-
-    let month;
-    if (MONTHS[monthRaw] !== undefined) {
-      month = MONTHS[monthRaw];
-    } else {
-      month = parseInt(monthRaw) - 1;
-    }
-
-    const dowIndex = parts.length - 4;
-    if (dowIndex < 0 || !DAYS_OF_WEEK.includes(dow)) {
-      return null;
-    }
-
-    const titleParts = parts.slice(0, dowIndex);
-    const title = titleParts.map(w =>
-      w.charAt(0).toUpperCase() + w.slice(1)
-    ).join(' ');
-
-    const date = new Date(year, month, day);
-    const dateFormatted = date.toLocaleDateString('en-US', {
+    var base = filename.replace(/\.jpg$/i, '');
+    var parts = base.split('_');
+    var year = parseInt(parts[parts.length - 1]);
+    var day = parseInt(parts[parts.length - 2]);
+    var monthRaw = parts[parts.length - 3].toLowerCase();
+    var dow = parts[parts.length - 4].toLowerCase();
+    var month = MONTHS[monthRaw] !== undefined ? MONTHS[monthRaw] : parseInt(monthRaw) - 1;
+    var dowIndex = parts.length - 4;
+    if (dowIndex < 0 || DAYS_OF_WEEK.indexOf(dow) < 0) return null;
+    var title = parts.slice(0, dowIndex).map(function(w) {
+      return w.charAt(0).toUpperCase() + w.slice(1);
+    }).join(' ');
+    var date = new Date(year, month, day);
+    var dateFormatted = date.toLocaleDateString('en-US', {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
     });
-    const key = base;
-
-    return { filename, title, date, dateFormatted, key };
+    return { filename: filename, title: title, date: date, dateFormatted: dateFormatted, key: base };
   }
 
   function buildPage(notes) {
-    const articles = IMAGE_FILES
-      .map(parseFilename)
-      .filter(a => a !== null)
-      .sort((a, b) => a.date - b.date);
-
+    var articles = IMAGE_FILES.map(parseFilename).filter(function(a) { return a !== null; })
+      .sort(function(a, b) { return a.date - b.date; });
     articles.forEach(function(a) { a.note = notes[a.key] || ''; });
 
     document.getElementById('articleCount').textContent =
@@ -514,184 +491,184 @@ body::before {
       ' \u00B7 ' + articles[0].date.getFullYear() + '\u2013' +
       articles[articles.length - 1].date.getFullYear();
 
-  const lightbox = document.getElementById('lightbox');
-  const lbImg = document.getElementById('lbImg');
-  const lbTitle = document.getElementById('lbTitle');
-  const lbDate = document.getElementById('lbDate');
-  const lbNote = document.getElementById('lbNote');
-  const lbCounter = document.getElementById('lbCounter');
-  const lbDownload = document.getElementById('lbDownload');
-  const lbViewport = document.getElementById('lbViewport');
+    // Lightbox state
+    var lightbox = document.getElementById('lightbox');
+    var lbImg = document.getElementById('lbImg');
+    var lbTitle = document.getElementById('lbTitle');
+    var lbDate = document.getElementById('lbDate');
+    var lbNote = document.getElementById('lbNote');
+    var lbCounter = document.getElementById('lbCounter');
+    var lbDownload = document.getElementById('lbDownload');
+    var lbViewport = document.getElementById('lbViewport');
+    var currentIndex = 0, scale = 1, panX = 0, panY = 0;
+    var isDragging = false, dragStartX, dragStartY, panStartX, panStartY;
 
-  let currentIndex = 0;
-  let scale = 1;
-  let panX = 0, panY = 0;
-  let isDragging = false;
-  let dragStartX, dragStartY, panStartX, panStartY;
-
-  function updateTransform() {
-    lbImg.style.transform = 'translate(' + panX + 'px, ' + panY + 'px) scale(' + scale + ')';
-  }
-
-  function resetView() {
-    scale = 1; panX = 0; panY = 0;
-    updateTransform();
-  }
-
-  function showArticle(index) {
-    const a = articles[index];
-    currentIndex = index;
-    lbImg.src = a.filename;
-    lbImg.alt = a.title;
-    lbTitle.textContent = a.title;
-    lbDate.textContent = a.dateFormatted;
-    lbNote.textContent = a.note || '';
-    lbNote.style.display = a.note ? 'block' : 'none';
-    lbCounter.textContent = (index + 1) + ' / ' + articles.length;
-    lbDownload.href = a.filename;
-    lbDownload.download = a.filename;
-    resetView();
-  }
-
-  function openLightbox(index) {
-    showArticle(index);
-    lightbox.classList.add('active');
-    document.body.style.overflow = 'hidden';
-    history.pushState({ lightbox: true }, '');
-  }
-
-  function closeLightbox(fromPopstate) {
-    if (!lightbox.classList.contains('active')) return;
-    lightbox.classList.remove('active');
-    document.body.style.overflow = '';
-    if (!fromPopstate) history.back();
-  }
-
-  window.addEventListener('popstate', function() {
-    closeLightbox(true);
-  });
-
-  function navigate(dir) {
-    let next = currentIndex + dir;
-    if (next < 0) next = articles.length - 1;
-    if (next >= articles.length) next = 0;
-    showArticle(next);
-  }
-
-  // Buttons
-  document.getElementById('lbClose').addEventListener('click', closeLightbox);
-  document.getElementById('lbPrev').addEventListener('click', function() { navigate(-1); });
-  document.getElementById('lbNext').addEventListener('click', function() { navigate(1); });
-  document.getElementById('lbZoomIn').addEventListener('click', function() {
-    scale = Math.min(scale * 1.3, 8); updateTransform();
-  });
-  document.getElementById('lbZoomOut').addEventListener('click', function() {
-    scale = Math.max(scale / 1.3, 0.5); updateTransform();
-  });
-  document.getElementById('lbReset').addEventListener('click', resetView);
-
-  // Click backdrop to close
-  lightbox.addEventListener('click', function(e) {
-    if (e.target === lightbox) closeLightbox();
-  });
-
-  // Keyboard
-  document.addEventListener('keydown', function(e) {
-    if (!lightbox.classList.contains('active')) return;
-    if (e.key === 'Escape') closeLightbox();
-    else if (e.key === 'ArrowLeft') navigate(-1);
-    else if (e.key === 'ArrowRight') navigate(1);
-    else if (e.key === '+' || e.key === '=') { scale = Math.min(scale * 1.3, 8); updateTransform(); }
-    else if (e.key === '-') { scale = Math.max(scale / 1.3, 0.5); updateTransform(); }
-    else if (e.key === '0') resetView();
-  });
-
-  // Scroll zoom
-  lbViewport.addEventListener('wheel', function(e) {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    scale = Math.max(0.5, Math.min(8, scale * delta));
-    updateTransform();
-  }, { passive: false });
-
-  // Mouse drag pan
-  lbViewport.addEventListener('mousedown', function(e) {
-    if (e.target === lbImg || e.target === lbViewport) {
-      isDragging = true;
-      dragStartX = e.clientX; dragStartY = e.clientY;
-      panStartX = panX; panStartY = panY;
-      e.preventDefault();
+    function updateTransform() {
+      lbImg.style.transform = 'translate(' + panX + 'px,' + panY + 'px) scale(' + scale + ')';
     }
-  });
-  window.addEventListener('mousemove', function(e) {
-    if (!isDragging) return;
-    panX = panStartX + (e.clientX - dragStartX);
-    panY = panStartY + (e.clientY - dragStartY);
-    updateTransform();
-  });
-  window.addEventListener('mouseup', function() { isDragging = false; });
+    function resetView() { scale = 1; panX = 0; panY = 0; updateTransform(); }
 
-  // Double-click reset
-  lbViewport.addEventListener('dblclick', function(e) {
-    e.preventDefault();
-    if (scale > 1.05) {
+    function showArticle(index) {
+      var a = articles[index];
+      currentIndex = index;
+      lbImg.src = a.filename; lbImg.alt = a.title;
+      lbTitle.textContent = a.title;
+      lbDate.textContent = a.dateFormatted;
+      lbNote.textContent = a.note || '';
+      lbNote.style.display = a.note ? 'block' : 'none';
+      lbCounter.textContent = (index + 1) + ' / ' + articles.length;
+      lbDownload.href = a.filename; lbDownload.download = a.filename;
       resetView();
-    } else {
-      scale = 2.5;
+    }
+
+    function openLightbox(index) {
+      showArticle(index);
+      lightbox.classList.add('active');
+      document.body.style.overflow = 'hidden';
+      history.pushState({ lightbox: true }, '');
+    }
+
+    function closeLightbox(fromPopstate) {
+      if (!lightbox.classList.contains('active')) return;
+      lightbox.classList.remove('active');
+      document.body.style.overflow = '';
+      if (!fromPopstate) history.back();
+    }
+
+    function navigate(dir) {
+      var next = currentIndex + dir;
+      if (next < 0) next = articles.length - 1;
+      if (next >= articles.length) next = 0;
+      showArticle(next);
+    }
+
+    // Build cards
+    var grid = document.getElementById('cardGrid');
+    articles.forEach(function(article, i) {
+      var card = document.createElement('div');
+      card.className = 'card';
+      card.style.animationDelay = (i * 0.06) + 's';
+      var noteHtml = article.note ? '<div class="card-note">' + article.note + '</div>' : '';
+      card.innerHTML =
+        '<div class="card-image-wrap">' +
+          '<img src="' + article.filename + '" alt="' + article.title + '" loading="lazy">' +
+        '</div>' +
+        '<div class="card-body">' +
+          '<div class="card-number">Article ' + (i + 1) + '</div>' +
+          '<div class="card-title">' + article.title + '</div>' +
+          '<div class="card-date">' + article.dateFormatted + '</div>' +
+          noteHtml +
+        '</div>';
+      card.addEventListener('click', function() { openLightbox(i); });
+      grid.appendChild(card);
+    });
+
+    // Lightbox controls
+    window.addEventListener('popstate', function() { closeLightbox(true); });
+    document.getElementById('lbClose').addEventListener('click', function() { closeLightbox(); });
+    document.getElementById('lbPrev').addEventListener('click', function() { navigate(-1); });
+    document.getElementById('lbNext').addEventListener('click', function() { navigate(1); });
+    document.getElementById('lbZoomIn').addEventListener('click', function() {
+      scale = Math.min(scale * 1.3, 8); updateTransform();
+    });
+    document.getElementById('lbZoomOut').addEventListener('click', function() {
+      scale = Math.max(scale / 1.3, 0.5); updateTransform();
+    });
+    document.getElementById('lbReset').addEventListener('click', resetView);
+    lightbox.addEventListener('click', function(e) { if (e.target === lightbox) closeLightbox(); });
+
+    document.addEventListener('keydown', function(e) {
+      if (!lightbox.classList.contains('active')) return;
+      if (e.key === 'Escape') closeLightbox();
+      else if (e.key === 'ArrowLeft') navigate(-1);
+      else if (e.key === 'ArrowRight') navigate(1);
+      else if (e.key === '+' || e.key === '=') { scale = Math.min(scale * 1.3, 8); updateTransform(); }
+      else if (e.key === '-') { scale = Math.max(scale / 1.3, 0.5); updateTransform(); }
+      else if (e.key === '0') resetView();
+    });
+
+    lbViewport.addEventListener('wheel', function(e) {
+      e.preventDefault();
+      var delta = e.deltaY > 0 ? 0.9 : 1.1;
+      scale = Math.max(0.5, Math.min(8, scale * delta));
       updateTransform();
-    }
-  });
+    }, { passive: false });
 
-  // ── Touch: pinch zoom + drag pan ──
-  let touches = {};
-  let lastPinchDist = null;
-
-  lbViewport.addEventListener('touchstart', function(e) {
-    for (let t of e.changedTouches) {
-      touches[t.identifier] = { x: t.clientX, y: t.clientY };
-    }
-    const ids = Object.keys(touches);
-    if (ids.length === 1) {
-      isDragging = true;
-      dragStartX = e.touches[0].clientX; dragStartY = e.touches[0].clientY;
-      panStartX = panX; panStartY = panY;
-    }
-    if (ids.length === 2) {
-      isDragging = false;
-      const t1 = touches[ids[0]], t2 = touches[ids[1]];
-      lastPinchDist = Math.hypot(t2.x - t1.x, t2.y - t1.y);
-    }
-    e.preventDefault();
-  }, { passive: false });
-
-  lbViewport.addEventListener('touchmove', function(e) {
-    for (let t of e.changedTouches) {
-      touches[t.identifier] = { x: t.clientX, y: t.clientY };
-    }
-    const ids = Object.keys(touches);
-    if (ids.length === 2 && lastPinchDist !== null) {
-      const t1 = touches[ids[0]], t2 = touches[ids[1]];
-      const dist = Math.hypot(t2.x - t1.x, t2.y - t1.y);
-      const ratio = dist / lastPinchDist;
-      scale = Math.max(0.5, Math.min(8, scale * ratio));
-      lastPinchDist = dist;
+    lbViewport.addEventListener('mousedown', function(e) {
+      if (e.target === lbImg || e.target === lbViewport) {
+        isDragging = true;
+        dragStartX = e.clientX; dragStartY = e.clientY;
+        panStartX = panX; panStartY = panY;
+        e.preventDefault();
+      }
+    });
+    window.addEventListener('mousemove', function(e) {
+      if (!isDragging) return;
+      panX = panStartX + (e.clientX - dragStartX);
+      panY = panStartY + (e.clientY - dragStartY);
       updateTransform();
-    } else if (isDragging && ids.length === 1) {
-      panX = panStartX + (e.touches[0].clientX - dragStartX);
-      panY = panStartY + (e.touches[0].clientY - dragStartY);
-      updateTransform();
-    }
-    e.preventDefault();
-  }, { passive: false });
+    });
+    window.addEventListener('mouseup', function() { isDragging = false; });
 
-  lbViewport.addEventListener('touchend', function(e) {
-    for (let t of e.changedTouches) {
-      delete touches[t.identifier];
-    }
-    if (Object.keys(touches).length < 2) lastPinchDist = null;
-    if (Object.keys(touches).length === 0) isDragging = false;
-  });
-  } // end initLightbox
+    lbViewport.addEventListener('dblclick', function(e) {
+      e.preventDefault();
+      if (scale > 1.05) resetView();
+      else { scale = 2.5; updateTransform(); }
+    });
+
+    // Touch: pinch zoom + drag pan
+    var touches = {}, lastPinchDist = null;
+    lbViewport.addEventListener('touchstart', function(e) {
+      for (var i = 0; i < e.changedTouches.length; i++) {
+        var t = e.changedTouches[i];
+        touches[t.identifier] = { x: t.clientX, y: t.clientY };
+      }
+      var ids = Object.keys(touches);
+      if (ids.length === 1) {
+        isDragging = true;
+        dragStartX = e.touches[0].clientX; dragStartY = e.touches[0].clientY;
+        panStartX = panX; panStartY = panY;
+      }
+      if (ids.length === 2) {
+        isDragging = false;
+        var t1 = touches[ids[0]], t2 = touches[ids[1]];
+        lastPinchDist = Math.hypot(t2.x - t1.x, t2.y - t1.y);
+      }
+      e.preventDefault();
+    }, { passive: false });
+
+    lbViewport.addEventListener('touchmove', function(e) {
+      for (var i = 0; i < e.changedTouches.length; i++) {
+        var t = e.changedTouches[i];
+        touches[t.identifier] = { x: t.clientX, y: t.clientY };
+      }
+      var ids = Object.keys(touches);
+      if (ids.length === 2 && lastPinchDist !== null) {
+        var t1 = touches[ids[0]], t2 = touches[ids[1]];
+        var dist = Math.hypot(t2.x - t1.x, t2.y - t1.y);
+        scale = Math.max(0.5, Math.min(8, scale * (dist / lastPinchDist)));
+        lastPinchDist = dist;
+        updateTransform();
+      } else if (isDragging && ids.length === 1) {
+        panX = panStartX + (e.touches[0].clientX - dragStartX);
+        panY = panStartY + (e.touches[0].clientY - dragStartY);
+        updateTransform();
+      }
+      e.preventDefault();
+    }, { passive: false });
+
+    lbViewport.addEventListener('touchend', function(e) {
+      for (var i = 0; i < e.changedTouches.length; i++)
+        delete touches[e.changedTouches[i].identifier];
+      if (Object.keys(touches).length < 2) lastPinchDist = null;
+      if (Object.keys(touches).length === 0) isDragging = false;
+    });
+  }
+
+  fetch('notes.yaml')
+    .then(function(r) { return r.ok ? r.text() : ''; })
+    .then(function(text) { buildPage(parseSimpleYaml(text)); })
+    .catch(function() { buildPage({}); });
 })();
 </script>
 </body>
