@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Duane Christenson — Grand Forks Herald Articles</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Source+Serif+4:opsz,wght@8..60,300;8..60,400;8..60,600&family=Libre+Franklin:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --parchment: #f5f0e8;
+  --parchment-dark: #e8e0d0;
+  --ink: #2c2416;
+  --ink-light: #5a4d3a;
+  --ink-faint: #8a7d6b;
+  --accent: #8b1a1a;
+  --accent-hover: #a62828;
+  --rule: #c4b89c;
+  --rule-dark: #9e927a;
+  --card-bg: #faf7f2;
+  --shadow: rgba(44, 36, 22, 0.12);
+  --shadow-deep: rgba(44, 36, 22, 0.25);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Source Serif 4', 'Georgia', serif;
+  background: var(--parchment);
+  color: var(--ink);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Noise texture overlay ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  opacity: 0.03;
+  pointer-events: none;
+  z-index: 9999;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+/* ── Header ── */
+.masthead {
+  text-align: center;
+  padding: 3rem 2rem 2rem;
+  border-bottom: 4px double var(--rule-dark);
+  background: linear-gradient(180deg, var(--parchment-dark) 0%, var(--parchment) 100%);
+  position: relative;
+}
+
+.masthead::before {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 3px;
+  background: var(--accent);
+  margin: 0 auto 1.5rem;
+}
+
+.masthead-publication {
+  font-family: 'Libre Franklin', sans-serif;
+  font-weight: 500;
+  font-size: 0.75rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 0.75rem;
+}
+
+.masthead-title {
+  font-family: 'Playfair Display', 'Georgia', serif;
+  font-weight: 900;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1.15;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+
+.masthead-subtitle {
+  font-family: 'Source Serif 4', serif;
+  font-weight: 300;
+  font-size: 1.1rem;
+  color: var(--ink-light);
+  margin-top: 0.75rem;
+  font-style: italic;
+}
+
+.masthead-rule {
+  display: block;
+  width: 120px;
+  height: 1px;
+  background: var(--rule-dark);
+  margin: 1.5rem auto 0;
+}
+
+.article-count {
+  font-family: 'Libre Franklin', sans-serif;
+  font-weight: 400;
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.1em;
+  margin-top: 1rem;
+}
+
+/* ── Grid ── */
+.grid-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2.5rem 2rem 4rem;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.75rem;
+}
+
+/* ── Cards ── */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px var(--shadow), 0 4px 12px var(--shadow);
+}
+
+.card-image-wrap {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--parchment-dark);
+  position: relative;
+}
+
+.card-image-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.5s ease;
+  filter: sepia(0.08) contrast(1.02);
+}
+
+.card:hover .card-image-wrap img {
+  transform: scale(1.04);
+}
+
+.card-image-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 60%, rgba(44,36,22,0.06) 100%);
+  pointer-events: none;
+}
+
+.card-body {
+  padding: 1.1rem 1.25rem 1.25rem;
+  border-top: 1px solid var(--rule);
+}
+
+.card-number {
+  font-family: 'Libre Franklin', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+}
+
+.card-title {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 1.15rem;
+  line-height: 1.3;
+  color: var(--ink);
+  margin-bottom: 0.5rem;
+}
+
+.card-date {
+  font-family: 'Libre Franklin', sans-serif;
+  font-weight: 400;
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.04em;
+}
+
+/* ── Lightbox ── */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(20, 16, 10, 0.92);
+  backdrop-filter: blur(8px);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.lightbox.active {
+  display: flex;
+  opacity: 1;
+}
+
+.lightbox-topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  z-index: 10;
+  background: linear-gradient(180deg, rgba(20,16,10,0.7) 0%, transparent 100%);
+}
+
+.lightbox-info {
+  color: #e8e0d0;
+}
+
+.lightbox-info-title {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.lightbox-info-date {
+  font-family: 'Libre Franklin', sans-serif;
+  font-weight: 300;
+  font-size: 0.8rem;
+  color: #b0a590;
+  margin-top: 0.15rem;
+}
+
+.lightbox-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.lb-btn {
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  color: #e8e0d0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, border-color 0.2s;
+  font-size: 1.1rem;
+}
+
+.lb-btn:hover {
+  background: rgba(255,255,255,0.18);
+  border-color: rgba(255,255,255,0.4);
+}
+
+.lightbox-viewport {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+}
+
+.lightbox-viewport:active { cursor: grabbing; }
+
+.lightbox-viewport img {
+  max-width: 92vw;
+  max-height: 88vh;
+  object-fit: contain;
+  transform-origin: center center;
+  transition: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  filter: drop-shadow(0 4px 24px rgba(0,0,0,0.4));
+}
+
+/* Nav arrows */
+.lb-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 52px;
+  height: 52px;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  color: #e8e0d0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  z-index: 10;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+}
+
+.lb-nav:hover {
+  background: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.35);
+}
+
+.lb-nav.prev { left: 1.25rem; }
+.lb-nav.next { right: 1.25rem; }
+
+/* Bottom bar with counter */
+.lightbox-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  padding: 1rem;
+  background: linear-gradient(0deg, rgba(20,16,10,0.6) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+.lb-counter {
+  font-family: 'Libre Franklin', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: #b0a590;
+  letter-spacing: 0.15em;
+}
+
+.lb-zoom-hint {
+  font-family: 'Libre Franklin', sans-serif;
+  font-size: 0.65rem;
+  color: #8a7d6b;
+  margin-top: 0.3rem;
+  letter-spacing: 0.08em;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .masthead { padding: 2rem 1.25rem 1.5rem; }
+  .grid-container { padding: 1.5rem 1rem 3rem; }
+  .card-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.25rem; }
+  .lb-nav { width: 40px; height: 40px; font-size: 1.1rem; }
+  .lb-nav.prev { left: 0.5rem; }
+  .lb-nav.next { right: 0.5rem; }
+  .lightbox-topbar { padding: 0.75rem 1rem; }
+  .lightbox-info-title { font-size: 0.95rem; }
+}
+
+@media (max-width: 480px) {
+  .card-grid { grid-template-columns: 1fr; }
+  .masthead-title { font-size: 1.75rem; }
+}
+
+/* ── Loading fade-in ── */
+.card { opacity: 0; animation: fadeUp 0.5s ease forwards; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <p class="masthead-publication">Grand Forks Herald</p>
+  <h1 class="masthead-title">Duane Christenson</h1>
+  <p class="masthead-subtitle">A collection of articles &amp; appearances</p>
+  <span class="masthead-rule"></span>
+  <p class="article-count" id="articleCount"></p>
+</header>
+
+<main class="grid-container">
+  <div class="card-grid" id="cardGrid"></div>
+</main>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <div class="lightbox-topbar">
+    <div class="lightbox-info">
+      <div class="lightbox-info-title" id="lbTitle"></div>
+      <div class="lightbox-info-date" id="lbDate"></div>
+    </div>
+    <div class="lightbox-actions">
+      <button class="lb-btn" id="lbZoomIn" title="Zoom in">&#43;</button>
+      <button class="lb-btn" id="lbZoomOut" title="Zoom out">&#8722;</button>
+      <button class="lb-btn" id="lbReset" title="Reset zoom">&#8634;</button>
+      <a class="lb-btn" id="lbDownload" title="Download" download>&#8595;</a>
+      <button class="lb-btn" id="lbClose" title="Close">&times;</button>
+    </div>
+  </div>
+  <button class="lb-nav prev" id="lbPrev">&#8249;</button>
+  <button class="lb-nav next" id="lbNext">&#8250;</button>
+  <div class="lightbox-viewport" id="lbViewport">
+    <img id="lbImg" src="" alt="">
+  </div>
+  <div class="lightbox-bottom">
+    <div class="lb-counter" id="lbCounter"></div>
+    <div class="lb-zoom-hint">Scroll to zoom &middot; Drag to pan &middot; Double-click to reset</div>
+  </div>
+</div>
+
+<script src="manifest.js"></script>
+<script>
+(function() {
+  const DAYS_OF_WEEK = ['sun','mon','tue','wed','thu','fri','sat'];
+  const MONTHS = {
+    jan:0, feb:1, mar:2, apr:3, may:4, jun:5,
+    jul:6, aug:7, sep:8, oct:9, nov:10, dec:11
+  };
+
+  function parseFilename(filename) {
+    const base = filename.replace(/\.jpg$/i, '');
+    const parts = base.split('_');
+
+    // Work backwards from end: year, day, month, dayOfWeek
+    const year = parseInt(parts[parts.length - 1]);
+    const day = parseInt(parts[parts.length - 2]);
+    let monthRaw = parts[parts.length - 3].toLowerCase();
+    const dow = parts[parts.length - 4].toLowerCase();
+
+    // Determine month — could be name (jan) or number (9)
+    let month;
+    if (MONTHS[monthRaw] !== undefined) {
+      month = MONTHS[monthRaw];
+    } else {
+      month = parseInt(monthRaw) - 1;
+    }
+
+    // Validate that dow is actually a day of week
+    const dowIndex = parts.length - 4;
+    if (dowIndex < 0 || !DAYS_OF_WEEK.includes(dow)) {
+      return null;
+    }
+
+    // Title is everything before the day-of-week
+    const titleParts = parts.slice(0, dowIndex);
+    const title = titleParts.map(w =>
+      w.charAt(0).toUpperCase() + w.slice(1)
+    ).join(' ');
+
+    const date = new Date(year, month, day);
+
+    const dateFormatted = date.toLocaleDateString('en-US', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+
+    return { filename, title, date, dateFormatted };
+  }
+
+  // Parse and sort
+  const articles = IMAGE_FILES
+    .map(parseFilename)
+    .filter(a => a !== null)
+    .sort((a, b) => a.date - b.date);
+
+  // Update count
+  document.getElementById('articleCount').textContent =
+    articles.length + ' article' + (articles.length !== 1 ? 's' : '') +
+    ' \u00B7 ' + articles[0].date.getFullYear() + '\u2013' +
+    articles[articles.length - 1].date.getFullYear();
+
+  // Build cards
+  const grid = document.getElementById('cardGrid');
+  articles.forEach((article, i) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.animationDelay = (i * 0.06) + 's';
+    card.innerHTML =
+      '<div class="card-image-wrap">' +
+        '<img src="' + article.filename + '" alt="' + article.title + '" loading="lazy">' +
+      '</div>' +
+      '<div class="card-body">' +
+        '<div class="card-number">Article ' + (i + 1) + '</div>' +
+        '<div class="card-title">' + article.title + '</div>' +
+        '<div class="card-date">' + article.dateFormatted + '</div>' +
+      '</div>';
+    card.addEventListener('click', function() { openLightbox(i); });
+    grid.appendChild(card);
+  });
+
+  // ── Lightbox logic ──
+  const lightbox = document.getElementById('lightbox');
+  const lbImg = document.getElementById('lbImg');
+  const lbTitle = document.getElementById('lbTitle');
+  const lbDate = document.getElementById('lbDate');
+  const lbCounter = document.getElementById('lbCounter');
+  const lbDownload = document.getElementById('lbDownload');
+  const lbViewport = document.getElementById('lbViewport');
+
+  let currentIndex = 0;
+  let scale = 1;
+  let panX = 0, panY = 0;
+  let isDragging = false;
+  let dragStartX, dragStartY, panStartX, panStartY;
+
+  function updateTransform() {
+    lbImg.style.transform = 'translate(' + panX + 'px, ' + panY + 'px) scale(' + scale + ')';
+  }
+
+  function resetView() {
+    scale = 1; panX = 0; panY = 0;
+    updateTransform();
+  }
+
+  function showArticle(index) {
+    const a = articles[index];
+    currentIndex = index;
+    lbImg.src = a.filename;
+    lbImg.alt = a.title;
+    lbTitle.textContent = a.title;
+    lbDate.textContent = a.dateFormatted;
+    lbCounter.textContent = (index + 1) + ' / ' + articles.length;
+    lbDownload.href = a.filename;
+    lbDownload.download = a.filename;
+    resetView();
+  }
+
+  function openLightbox(index) {
+    showArticle(index);
+    lightbox.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeLightbox() {
+    lightbox.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  function navigate(dir) {
+    let next = currentIndex + dir;
+    if (next < 0) next = articles.length - 1;
+    if (next >= articles.length) next = 0;
+    showArticle(next);
+  }
+
+  // Buttons
+  document.getElementById('lbClose').addEventListener('click', closeLightbox);
+  document.getElementById('lbPrev').addEventListener('click', function() { navigate(-1); });
+  document.getElementById('lbNext').addEventListener('click', function() { navigate(1); });
+  document.getElementById('lbZoomIn').addEventListener('click', function() {
+    scale = Math.min(scale * 1.3, 8); updateTransform();
+  });
+  document.getElementById('lbZoomOut').addEventListener('click', function() {
+    scale = Math.max(scale / 1.3, 0.5); updateTransform();
+  });
+  document.getElementById('lbReset').addEventListener('click', resetView);
+
+  // Click backdrop to close
+  lightbox.addEventListener('click', function(e) {
+    if (e.target === lightbox) closeLightbox();
+  });
+
+  // Keyboard
+  document.addEventListener('keydown', function(e) {
+    if (!lightbox.classList.contains('active')) return;
+    if (e.key === 'Escape') closeLightbox();
+    else if (e.key === 'ArrowLeft') navigate(-1);
+    else if (e.key === 'ArrowRight') navigate(1);
+    else if (e.key === '+' || e.key === '=') { scale = Math.min(scale * 1.3, 8); updateTransform(); }
+    else if (e.key === '-') { scale = Math.max(scale / 1.3, 0.5); updateTransform(); }
+    else if (e.key === '0') resetView();
+  });
+
+  // Scroll zoom
+  lbViewport.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    scale = Math.max(0.5, Math.min(8, scale * delta));
+    updateTransform();
+  }, { passive: false });
+
+  // Mouse drag pan
+  lbViewport.addEventListener('mousedown', function(e) {
+    if (e.target === lbImg || e.target === lbViewport) {
+      isDragging = true;
+      dragStartX = e.clientX; dragStartY = e.clientY;
+      panStartX = panX; panStartY = panY;
+      e.preventDefault();
+    }
+  });
+  window.addEventListener('mousemove', function(e) {
+    if (!isDragging) return;
+    panX = panStartX + (e.clientX - dragStartX);
+    panY = panStartY + (e.clientY - dragStartY);
+    updateTransform();
+  });
+  window.addEventListener('mouseup', function() { isDragging = false; });
+
+  // Double-click reset
+  lbViewport.addEventListener('dblclick', function(e) {
+    e.preventDefault();
+    if (scale > 1.05) {
+      resetView();
+    } else {
+      scale = 2.5;
+      updateTransform();
+    }
+  });
+
+  // ── Touch: pinch zoom + drag pan ──
+  let touches = {};
+  let lastPinchDist = null;
+
+  lbViewport.addEventListener('touchstart', function(e) {
+    for (let t of e.changedTouches) {
+      touches[t.identifier] = { x: t.clientX, y: t.clientY };
+    }
+    const ids = Object.keys(touches);
+    if (ids.length === 1) {
+      isDragging = true;
+      dragStartX = e.touches[0].clientX; dragStartY = e.touches[0].clientY;
+      panStartX = panX; panStartY = panY;
+    }
+    if (ids.length === 2) {
+      isDragging = false;
+      const t1 = touches[ids[0]], t2 = touches[ids[1]];
+      lastPinchDist = Math.hypot(t2.x - t1.x, t2.y - t1.y);
+    }
+    e.preventDefault();
+  }, { passive: false });
+
+  lbViewport.addEventListener('touchmove', function(e) {
+    for (let t of e.changedTouches) {
+      touches[t.identifier] = { x: t.clientX, y: t.clientY };
+    }
+    const ids = Object.keys(touches);
+    if (ids.length === 2 && lastPinchDist !== null) {
+      const t1 = touches[ids[0]], t2 = touches[ids[1]];
+      const dist = Math.hypot(t2.x - t1.x, t2.y - t1.y);
+      const ratio = dist / lastPinchDist;
+      scale = Math.max(0.5, Math.min(8, scale * ratio));
+      lastPinchDist = dist;
+      updateTransform();
+    } else if (isDragging && ids.length === 1) {
+      panX = panStartX + (e.touches[0].clientX - dragStartX);
+      panY = panStartY + (e.touches[0].clientY - dragStartY);
+      updateTransform();
+    }
+    e.preventDefault();
+  }, { passive: false });
+
+  lbViewport.addEventListener('touchend', function(e) {
+    for (let t of e.changedTouches) {
+      delete touches[t.identifier];
+    }
+    if (Object.keys(touches).length < 2) lastPinchDist = null;
+    if (Object.keys(touches).length === 0) isDragging = false;
+  });
+})();
+</script>
+</body>
+</html>
