@@ -197,6 +197,17 @@ body::before {
   letter-spacing: 0.04em;
 }
 
+.card-note {
+  font-family: 'Source Serif 4', serif;
+  font-size: 0.82rem;
+  font-style: italic;
+  color: var(--ink-light);
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--rule);
+  line-height: 1.4;
+}
+
 /* ── Lightbox ── */
 .lightbox {
   position: fixed;
@@ -246,6 +257,15 @@ body::before {
   font-size: 0.8rem;
   color: #b0a590;
   margin-top: 0.15rem;
+}
+
+.lightbox-info-note {
+  font-family: 'Source Serif 4', serif;
+  font-weight: 300;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: #c4b89c;
+  margin-top: 0.25rem;
 }
 
 .lightbox-actions {
@@ -398,6 +418,7 @@ body::before {
     <div class="lightbox-info">
       <div class="lightbox-info-title" id="lbTitle"></div>
       <div class="lightbox-info-date" id="lbDate"></div>
+      <div class="lightbox-info-note" id="lbNote"></div>
     </div>
     <div class="lightbox-actions">
       <button class="lb-btn" id="lbZoomIn" title="Zoom in">&#43;</button>
@@ -427,17 +448,33 @@ body::before {
     jul:6, aug:7, sep:8, oct:9, nov:10, dec:11
   };
 
+  function parseSimpleYaml(text) {
+    const notes = {};
+    text.split('\n').forEach(function(line) {
+      line = line.trim();
+      if (!line || line.startsWith('#')) return;
+      const colon = line.indexOf(':');
+      if (colon < 0) return;
+      const key = line.slice(0, colon).trim();
+      let val = line.slice(colon + 1).trim();
+      if ((val.startsWith('"') && val.endsWith('"')) ||
+          (val.startsWith("'") && val.endsWith("'"))) {
+        val = val.slice(1, -1);
+      }
+      notes[key] = val;
+    });
+    return notes;
+  }
+
   function parseFilename(filename) {
     const base = filename.replace(/\.jpg$/i, '');
     const parts = base.split('_');
 
-    // Work backwards from end: year, day, month, dayOfWeek
     const year = parseInt(parts[parts.length - 1]);
     const day = parseInt(parts[parts.length - 2]);
     let monthRaw = parts[parts.length - 3].toLowerCase();
     const dow = parts[parts.length - 4].toLowerCase();
 
-    // Determine month — could be name (jan) or number (9)
     let month;
     if (MONTHS[monthRaw] !== undefined) {
       month = MONTHS[monthRaw];
@@ -445,63 +482,43 @@ body::before {
       month = parseInt(monthRaw) - 1;
     }
 
-    // Validate that dow is actually a day of week
     const dowIndex = parts.length - 4;
     if (dowIndex < 0 || !DAYS_OF_WEEK.includes(dow)) {
       return null;
     }
 
-    // Title is everything before the day-of-week
     const titleParts = parts.slice(0, dowIndex);
     const title = titleParts.map(w =>
       w.charAt(0).toUpperCase() + w.slice(1)
     ).join(' ');
 
     const date = new Date(year, month, day);
-
     const dateFormatted = date.toLocaleDateString('en-US', {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
     });
+    const key = base;
 
-    return { filename, title, date, dateFormatted };
+    return { filename, title, date, dateFormatted, key };
   }
 
-  // Parse and sort
-  const articles = IMAGE_FILES
-    .map(parseFilename)
-    .filter(a => a !== null)
-    .sort((a, b) => a.date - b.date);
+  function buildPage(notes) {
+    const articles = IMAGE_FILES
+      .map(parseFilename)
+      .filter(a => a !== null)
+      .sort((a, b) => a.date - b.date);
 
-  // Update count
-  document.getElementById('articleCount').textContent =
-    articles.length + ' article' + (articles.length !== 1 ? 's' : '') +
-    ' \u00B7 ' + articles[0].date.getFullYear() + '\u2013' +
-    articles[articles.length - 1].date.getFullYear();
+    articles.forEach(function(a) { a.note = notes[a.key] || ''; });
 
-  // Build cards
-  const grid = document.getElementById('cardGrid');
-  articles.forEach((article, i) => {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.style.animationDelay = (i * 0.06) + 's';
-    card.innerHTML =
-      '<div class="card-image-wrap">' +
-        '<img src="' + article.filename + '" alt="' + article.title + '" loading="lazy">' +
-      '</div>' +
-      '<div class="card-body">' +
-        '<div class="card-number">Article ' + (i + 1) + '</div>' +
-        '<div class="card-title">' + article.title + '</div>' +
-        '<div class="card-date">' + article.dateFormatted + '</div>' +
-      '</div>';
-    card.addEventListener('click', function() { openLightbox(i); });
-    grid.appendChild(card);
-  });
+    document.getElementById('articleCount').textContent =
+      articles.length + ' article' + (articles.length !== 1 ? 's' : '') +
+      ' \u00B7 ' + articles[0].date.getFullYear() + '\u2013' +
+      articles[articles.length - 1].date.getFullYear();
 
-  // ── Lightbox logic ──
   const lightbox = document.getElementById('lightbox');
   const lbImg = document.getElementById('lbImg');
   const lbTitle = document.getElementById('lbTitle');
   const lbDate = document.getElementById('lbDate');
+  const lbNote = document.getElementById('lbNote');
   const lbCounter = document.getElementById('lbCounter');
   const lbDownload = document.getElementById('lbDownload');
   const lbViewport = document.getElementById('lbViewport');
@@ -528,6 +545,8 @@ body::before {
     lbImg.alt = a.title;
     lbTitle.textContent = a.title;
     lbDate.textContent = a.dateFormatted;
+    lbNote.textContent = a.note || '';
+    lbNote.style.display = a.note ? 'block' : 'none';
     lbCounter.textContent = (index + 1) + ' / ' + articles.length;
     lbDownload.href = a.filename;
     lbDownload.download = a.filename;
@@ -538,12 +557,19 @@ body::before {
     showArticle(index);
     lightbox.classList.add('active');
     document.body.style.overflow = 'hidden';
+    history.pushState({ lightbox: true }, '');
   }
 
-  function closeLightbox() {
+  function closeLightbox(fromPopstate) {
+    if (!lightbox.classList.contains('active')) return;
     lightbox.classList.remove('active');
     document.body.style.overflow = '';
+    if (!fromPopstate) history.back();
   }
+
+  window.addEventListener('popstate', function() {
+    closeLightbox(true);
+  });
 
   function navigate(dir) {
     let next = currentIndex + dir;
@@ -665,6 +691,7 @@ body::before {
     if (Object.keys(touches).length < 2) lastPinchDist = null;
     if (Object.keys(touches).length === 0) isDragging = false;
   });
+  } // end initLightbox
 })();
 </script>
 </body>
