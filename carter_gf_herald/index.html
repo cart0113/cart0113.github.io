@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Duane Christenson — Grand Forks Herald Articles</title>
+<title>Carter — Grand Forks Herald Articles</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Source+Serif+4:opsz,wght@8..60,300;8..60,400;8..60,600&family=Libre+Franklin:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -425,7 +425,7 @@ body::before {
 <body>
 
 <header class="masthead">
-  <h1 class="masthead-title">Duane Christenson</h1>
+  <h1 class="masthead-title">Carter</h1>
   <p class="masthead-subtitle">A collection of articles &amp; appearances in the Grand Forks Herald</p>
   <span class="masthead-rule"></span>
   <p class="article-count" id="articleCount"></p>
@@ -503,6 +503,7 @@ body::before {
       return w.charAt(0).toUpperCase() + w.slice(1);
     }).join(' ');
     var date = new Date(year, month, day);
+    if (isNaN(date.getTime())) return null;
     var dateFormatted = date.toLocaleDateString('en-US', {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
     });
