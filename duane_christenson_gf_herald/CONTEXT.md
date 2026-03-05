@@ -1,6 +1,6 @@
 # Duane Christenson — Grand Forks Herald Articles
 
-Working directory for sourcing newspaper article images that get published to `~/workspace/GIT_CART0113/duane_christenson_gf_herald/`.
+Source images live in `~/workspace/dc/duane/` and get published here.
 
 ## What This Is
 
@@ -37,15 +37,15 @@ Examples:
 
 | File | Purpose |
 |------|---------|
-| `index.html` | Dynamic page — parses filenames via JS, sorts by date, card grid with lightbox viewer (zoom/pan/download) |
+| `index.html` | Dynamic page — parses filenames via JS, sorts by date, card grid with lightbox viewer (zoom/pan/download/copy link) |
 | `manifest.js` | Auto-generated list of `.jpg` filenames (loaded by index.html) |
 | `notes.yaml` | Per-image annotations keyed by filename stem (without `.jpg`) |
 | `update.sh` | Run after adding/removing images to regenerate `manifest.js` |
 
 ## Workflow for Adding New Images
 
-1. Add the `.jpg` to this directory (`~/workspace/dc/`) using the naming convention above
-2. Copy all images to the published folder: `cp ~/workspace/dc/*.jpg ~/workspace/GIT_CART0113/duane_christenson_gf_herald/`
+1. Add the `.jpg` to `~/workspace/dc/duane/` using the naming convention above
+2. Copy images to the published folder: `cp ~/workspace/dc/duane/*.jpg ~/workspace/GIT_CART0113/duane_christenson_gf_herald/`
 3. Run `./update.sh` in the published folder to regenerate `manifest.js`
 4. Optionally add a note in `notes.yaml`
 5. `git add`, `git commit`, `git push` in `GIT_CART0113`
@@ -65,7 +65,7 @@ Notes appear on the card below the date and in the lightbox viewer header.
 
 - Newspaper/archival aesthetic (warm parchment tones, Playfair Display serif headings)
 - Responsive card grid sorted chronologically by date
-- Lightbox viewer: scroll-to-zoom, drag-to-pan, download button, left/right arrow navigation
+- Lightbox viewer: scroll-to-zoom, drag-to-pan, download button, copy link button, left/right arrow navigation
 - Touch support (pinch zoom, drag pan) for mobile
 - Keyboard shortcuts: arrows to navigate, Esc to close, +/- to zoom, 0 to reset
 - Browser back button closes lightbox (History API)
