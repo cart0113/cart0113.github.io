@@ -26,7 +26,7 @@ def get_image_dims(filepath):
 def ocr_image(filepath):
     """Run tesseract and return parsed rows."""
     out = subprocess.run(
-        ["tesseract", str(filepath), "stdout", "--psm", "6", "tsv"],
+        ["tesseract", str(filepath), "stdout", "--psm", "1", "tsv"],
         capture_output=True, text=True
     )
     rows = []
