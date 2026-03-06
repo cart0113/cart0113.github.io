@@ -335,15 +335,40 @@ body::before {
 
 .lightbox-viewport:active { cursor: grabbing; }
 
+.lb-img-container {
+  position: relative;
+  display: inline-block;
+  transform-origin: center center;
+  transition: none;
+}
+
 .lightbox-viewport img {
   max-width: 92vw;
   max-height: 88vh;
   object-fit: contain;
-  transform-origin: center center;
-  transition: none;
   user-select: none;
   -webkit-user-drag: none;
   filter: drop-shadow(0 4px 24px rgba(0,0,0,0.4));
+  display: block;
+}
+
+/* Highlight overlays */
+.highlight-box {
+  position: absolute;
+  background: rgba(255, 220, 0, 0.35);
+  border: 2px solid rgba(255, 180, 0, 0.8);
+  border-radius: 2px;
+  pointer-events: none;
+  box-shadow: 0 0 6px rgba(255, 200, 0, 0.4);
+}
+
+.highlights-off .highlight-box {
+  display: none;
+}
+
+.lb-btn.highlight-active {
+  background: rgba(255, 220, 0, 0.25);
+  border-color: rgba(255, 200, 0, 0.6);
 }
 
 /* Nav arrows */
@@ -453,6 +478,9 @@ body::before {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
         <span class="copied-tooltip" id="copiedTooltip">Copied!</span>
       </button>
+      <button class="lb-btn highlight-active" id="lbHighlight" title="Toggle highlights">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      </button>
       <button class="lb-btn" id="lbZoomIn" title="Zoom in">&#43;</button>
       <button class="lb-btn" id="lbZoomOut" title="Zoom out">&#8722;</button>
       <button class="lb-btn" id="lbReset" title="Reset zoom">&#8634;</button>
@@ -463,7 +491,9 @@ body::before {
   <button class="lb-nav prev" id="lbPrev">&#8249;</button>
   <button class="lb-nav next" id="lbNext">&#8250;</button>
   <div class="lightbox-viewport" id="lbViewport">
-    <img id="lbImg" src="" alt="">
+    <div class="lb-img-container" id="lbImgContainer">
+      <img id="lbImg" src="" alt="">
+    </div>
   </div>
   <div class="lightbox-bottom">
     <div class="lb-counter" id="lbCounter"></div>
@@ -476,6 +506,7 @@ body::before {
 (function() {
   var DAYS_OF_WEEK = ['sun','mon','tue','wed','thu','fri','sat'];
   var MONTHS = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,sept:8,oct:9,nov:10,dec:11};
+  var ocrData = {};
 
   function parseSimpleYaml(text) {
     var notes = {};
@@ -540,10 +571,29 @@ body::before {
     var currentIndex = 0, scale = 1, panX = 0, panY = 0;
     var isDragging = false, dragStartX, dragStartY, panStartX, panStartY;
 
+    var lbImgContainer = document.getElementById('lbImgContainer');
+
     function updateTransform() {
-      lbImg.style.transform = 'translate(' + panX + 'px,' + panY + 'px) scale(' + scale + ')';
+      lbImgContainer.style.transform = 'translate(' + panX + 'px,' + panY + 'px) scale(' + scale + ')';
     }
     function resetView() { scale = 1; panX = 0; panY = 0; updateTransform(); }
+
+    function renderHighlights(key) {
+      var old = lbImgContainer.querySelectorAll('.highlight-box');
+      for (var i = 0; i < old.length; i++) old[i].remove();
+      var matches = ocrData[key];
+      if (!matches) return;
+      for (var i = 0; i < matches.length; i++) {
+        var m = matches[i];
+        var box = document.createElement('div');
+        box.className = 'highlight-box';
+        box.style.left = m.x + '%';
+        box.style.top = m.y + '%';
+        box.style.width = m.w + '%';
+        box.style.height = m.h + '%';
+        lbImgContainer.appendChild(box);
+      }
+    }
 
     function showArticle(index) {
       var a = articles[index];
@@ -555,6 +605,7 @@ body::before {
       lbNote.style.display = a.note ? 'block' : 'none';
       lbCounter.textContent = (index + 1) + ' / ' + articles.length;
       lbDownload.href = a.filename; lbDownload.download = a.filename;
+      renderHighlights(a.key);
       resetView();
     }
 
@@ -609,6 +660,13 @@ body::before {
         copiedTooltip.classList.add('show');
         setTimeout(function() { copiedTooltip.classList.remove('show'); }, 1500);
       });
+    });
+
+    // Highlight toggle (on by default)
+    var lbHighlight = document.getElementById('lbHighlight');
+    lbHighlight.addEventListener('click', function() {
+      lbImgContainer.classList.toggle('highlights-off');
+      lbHighlight.classList.toggle('highlight-active');
     });
 
     // Lightbox controls
@@ -713,10 +771,13 @@ body::before {
     });
   }
 
-  fetch('notes.yaml')
-    .then(function(r) { return r.ok ? r.text() : ''; })
-    .then(function(text) { buildPage(parseSimpleYaml(text)); })
-    .catch(function() { buildPage({}); });
+  Promise.all([
+    fetch('notes.yaml').then(function(r) { return r.ok ? r.text() : ''; }).catch(function() { return ''; }),
+    fetch('ocr.json').then(function(r) { return r.ok ? r.json() : {}; }).catch(function() { return {}; })
+  ]).then(function(results) {
+    ocrData = results[1];
+    buildPage(parseSimpleYaml(results[0]));
+  });
 })();
 </script>
 </body>
