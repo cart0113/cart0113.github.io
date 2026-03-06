@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 """OCR images for 'gjevre' matches and write bounding boxes to ocr.json."""
 import json
+import re
 import subprocess
 import sys
 import csv
 import io
 from pathlib import Path
+
+DAYS_OF_WEEK = {"sun", "mon", "tue", "wed", "thu", "fri", "sat"}
+MONTHS = {"jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "sept", "oct", "nov", "dec"}
 
 
 def get_image_dims(filepath):
@@ -44,8 +48,11 @@ def ocr_image(filepath):
     return rows
 
 
-def find_gjevre(filepath):
-    """Find all 'gjevre' occurrences with bounding box percentages."""
+FAMILY_NAMES = {"gjevre", "cheryl", "wade", "clinton", "ole"}
+
+
+def find_matches(filepath, terms):
+    """Find occurrences of terms with bounding box percentages."""
     w, h = get_image_dims(filepath)
     if w == 0 or h == 0:
         return []
@@ -54,7 +61,10 @@ def find_gjevre(filepath):
     matches = []
     for row in rows:
         text = row.get("text", "").strip()
-        if "gjevre" in text.lower():
+        if not text or len(text) < 3:
+            continue
+        cleaned = re.sub(r"[^a-zA-Z]", "", text).lower()
+        if any(cleaned == term or (term == "gjevre" and term in cleaned) for term in terms):
             try:
                 left = float(row["left"]) / w * 100
                 top = float(row["top"]) / h * 100
@@ -71,6 +81,14 @@ def find_gjevre(filepath):
                 })
             except (ValueError, KeyError):
                 continue
+    return matches
+
+
+def find_gjevre(filepath):
+    """Find 'gjevre' occurrences. Falls back to family names if none found."""
+    matches = find_matches(filepath, {"gjevre"})
+    if not matches:
+        matches = find_matches(filepath, FAMILY_NAMES)
     return matches
 
 
